@@ -36,6 +36,12 @@ import org.apache.log4j.Logger;
  *  with NO GAPS.
  *  also the max value of the set is always at position 1.
  *
+ *
+ *  given an element at position i:
+ *      it's parent is at position i/2  (for i > 1)
+ *      it's children are at 2i and 2i+1
+ *
+ *
  *  based on Sedgewick ch 9
  *
  *  standard:  highest node at index==1,  index==0 always empty
@@ -51,7 +57,11 @@ public abstract class ArrayHeap<T extends Comparable<T>> {
 
   /**
    * Insert new item into Heap
-   * bubble up if reposition needed.
+   *   at the next available array position '++count'
+   *   this is at the bottom of the Heap which may or may not be right
+   *   so..
+   *
+   * bubble up if reposition needed until it is not less than its parent
    *
    * @param e
    */
@@ -116,6 +126,8 @@ public abstract class ArrayHeap<T extends Comparable<T>> {
 
   /**
    *  higher node bubble up
+   *
+   *  if we are greater than any particular
    *
    *  input:  index - array index of node
    *
