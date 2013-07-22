@@ -13,6 +13,29 @@ import org.apache.log4j.Logger;
  *
  *  Array based implementation of a Heap
  *
+ *  Binary Tree Structure
+ *
+ *  Leaf Levels all filled completely from the left
+ *    (any empty children are at the leaf level and left children
+ *     are filled first so that any empty nodes are on the right)
+ *
+ *  Parent always has higher or equal value than any child
+ *
+ *    example:
+ *                 X
+ *             T        O
+ *          B    S                  <<<  next child is  Left child of O
+ *
+ *  Array representation:  start at element 1
+ *
+ *    0 1 2 3 4 5 6
+ *      X T O B S
+ *
+ *  note that the tree constraints guarantee that the array always
+ *  fills up left to right starting at position 1,
+ *  with NO GAPS.
+ *  also the max value of the set is always at position 1.
+ *
  *  based on Sedgewick ch 9
  *
  *  standard:  highest node at index==1,  index==0 always empty
