@@ -1,10 +1,7 @@
 package datastructures.priorityQueue;
 
-import datastructures.BST.StringNode;
 import org.junit.Assert;
-import org.junit.Assert.*;
 import org.junit.Test;
-import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 
@@ -41,27 +38,27 @@ public abstract class PriorityQueue_base_test {
     q.insert("20");
     q.insert("10");
 
-    String max = q.removeMax();
+    String max = q.removeTop();
     String message = "expected 40, got "+max;
     p(m+message);
     Assert.assertTrue(message, max.equals("40"));
 
-    max = q.removeMax();
+    max = q.removeTop();
     message = "expected 20, got "+max;
     p(m+message);
     Assert.assertTrue(message, max.equals("20"));
 
-    max = q.removeMax();
+    max = q.removeTop();
     message = "expected 11, got "+max;
     p(m+message);
     Assert.assertTrue(message, max.equals("11"));
 
-    max = q.removeMax();
+    max = q.removeTop();
     message = "expected 10, got "+max;
     p(m+message);
     Assert.assertTrue(message, max.equals("10"));
 
-    max = q.removeMax();
+    max = q.removeTop();
     message = "expected <empty> got '"+max+"'";
     p(m+message);
     Assert.assertTrue(message, max.length()==0);

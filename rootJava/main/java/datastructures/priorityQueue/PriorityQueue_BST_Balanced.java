@@ -36,12 +36,13 @@ public class PriorityQueue_BST_Balanced implements PriorityQ<String> {
     return bst.getCount() <= 0;
   }
 
-  public void insert(String n) {
+  public int insert(String n) {
     Node<String> node = new StringNode(n, n);
     bst.insert(node);
 
     // now we have to balance the tree
     bst.balance();
+    return 0;   // meaningless
   };
 
   /**
@@ -50,7 +51,7 @@ public class PriorityQueue_BST_Balanced implements PriorityQ<String> {
    *
    * @return
    */
-  public String removeMax() {
+  public String removeTop() {
     // the max node is always the right most
     Node<String> maxNode = bst.getMax();
 
@@ -60,6 +61,25 @@ public class PriorityQueue_BST_Balanced implements PriorityQ<String> {
     return maxNode.getKey();
   }
 
+  public String peekTop() {
+    Node<String> maxNode = bst.getMax();
+    if (maxNode == null) return "";
+    return maxNode.getKey();
+  }
 
+  public int size() {
+    throw new RuntimeException("NYI");
+  }
 
+  public String removeNode(int index) {
+    throw new RuntimeException("NYI");
+  }
+
+  public String getNode(int index) {
+    throw new RuntimeException("NYI");
+  }
+
+  public  int repositionNode(int index) {
+    throw new RuntimeException("NYI");
+  }
 }

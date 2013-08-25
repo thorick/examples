@@ -145,7 +145,7 @@ public class QuickSort_countComparisons_Stanford_Coursera {
    * @param left
    * @param right
    * @param pivotMethod
-   * @return
+   * @return count of comparisons done in the partition method
    */
   private long quickSort(int[] a, int left, int right, int pivotMethod) {
     String m = "quickSort: ";
@@ -154,7 +154,7 @@ public class QuickSort_countComparisons_Stanford_Coursera {
 
     recurseCount++;
     if (hardStop > 0 && recurseCount >= hardStop) {
-      p(m+" hardstop after "+recurseCount+" iterations");
+      p(m + " hardstop after " + recurseCount + " iterations");
       System.exit(0);
     }
 
@@ -167,6 +167,13 @@ public class QuickSort_countComparisons_Stanford_Coursera {
       //p("\n\n" + m + "note:  array partition is of size=2.\n");
     }
 
+    //
+    // for the purposes of the homework assignment
+    // we do NOT include the number of comparisons required
+    // to select a pivotIndex.
+    // If we were doing a strict performance analysis, we certainly would
+    // include this number in the results !
+    //
     int pivotIndex = choosePivot(a, left, right, pivotMethod);
 
     // comparisons are all done in the partition function
@@ -187,8 +194,7 @@ public class QuickSort_countComparisons_Stanford_Coursera {
       lCount = quickSort(a, left, rIndex, pivotMethod);
       totalCount += lCount;
       //p(m+"\n after QS LEFT lCount="+lCount+" thisCount="+thisCount+", totalCount="+totalCount);
-    }
-    else {
+    } else {
       //p(m+" skip QS LEFT");
     }
 
@@ -202,8 +208,7 @@ public class QuickSort_countComparisons_Stanford_Coursera {
       rCount = quickSort(a, lIndex, right, pivotMethod);
       totalCount += rCount;
       //p(m+"\n after QS RIGHT rCount="+rCount+" thisCount="+thisCount+", totalCount="+totalCount);
-    }
-    else {
+    } else {
       //p(m+" skip QS RIGHT");
     }
     //p("\n"+m+" END of QS returning totalCount="+totalCount);
@@ -228,21 +233,23 @@ public class QuickSort_countComparisons_Stanford_Coursera {
         // even/odd is critical to get matching results with homework answer
         int len = right - left + 1;
         boolean odd = (len % 2 != 0);
-        int middleIndexOffset = (len/2) - 1; // by definition middle element of an array of length 2k is the kth element
+        int middleIndexOffset = (len / 2) - 1; // by definition middle element of an array of length 2k is the kth element
         if (odd) {
           middleIndexOffset = ((len + 1) / 2) - 1;    // 0 1 2 3 4   index of '2' is 2 = (5+1)/2 - 1
         }
 
         int[] cArray = new int[3];
 
-        int ind0=left;
-        int ind1=left+middleIndexOffset;
+        int ind0 = left;
+        int ind1 = left + middleIndexOffset;
         int ind2 = right;
 
         cArray[0] = a[ind0];
         cArray[1] = a[ind1];
         cArray[2] = a[ind2];
 
+        // various auxilliary arrays solely for the purpose of easy debug
+        // trace printing.
         int[] o = new int[3];
         o[0] = cArray[0];
         o[1] = cArray[1];
@@ -254,14 +261,19 @@ public class QuickSort_countComparisons_Stanford_Coursera {
         ii[2] = ind2;
 
         //p(m+" method "+pivotMethod+": len="+len+", odd="+odd+", middleIndexOffset="+
-       // middleIndexOffset+", first["+ind0+"]="+o[0]+", middle["+ind1+"]="+o[1]+", last["+ind2+"]="+o[2]);
+        // middleIndexOffset+", first["+ind0+"]="+o[0]+", middle["+ind1+"]="+o[1]+", last["+ind2+"]="+o[2]);
 
-        // simple sort
+        //
+        // stupid O(n**2) insertion sort
+        // but this is a small data set and
+        // we should use a proven sorting method inside of
+        // a sorting method that we are creating (so that we can trust the results)
+        //
         int[] sortedC = new int[3];
         int smallestJ = 0;
-        for (int i=0; i < cArray.length; i++) {
+        for (int i = 0; i < cArray.length; i++) {
           int smallest = 100001;
-          for (int j=0; j < cArray.length; j++) {
+          for (int j = 0; j < cArray.length; j++) {
             if (cArray[j] > 0 && cArray[j] < smallest) {
               smallest = cArray[j];
               smallestJ = j;
@@ -294,7 +306,7 @@ public class QuickSort_countComparisons_Stanford_Coursera {
    * @param a
    * @param left
    * @param right
-   * @return  new pivot array index
+   * @return new pivot array index
    */
   public int partition(int[] a, int left, int right, int pivotIndex) {
     String m = "partition: ";
@@ -314,14 +326,12 @@ public class QuickSort_countComparisons_Stanford_Coursera {
     for (int j = left + 1; j <= right; j++) {
       //p(m + "loop j=" + j + ", j:a[" + j + "]=" + a[j] + ", pivotVal=" + pivotVal);
 
-      //if (a[j] < a[pivotIndex]) {
       if (a[j] < pivotVal) {
         if (i != j) {
-        temp = a[j];
-        a[j] = a[i];
-        a[i] = temp;
-        }
-        else {
+          temp = a[j];
+          a[j] = a[i];
+          a[i] = temp;
+        } else {
           //p(m+"a[j] < pivotVal: but i == j, so no swap ");
         }
         i++;

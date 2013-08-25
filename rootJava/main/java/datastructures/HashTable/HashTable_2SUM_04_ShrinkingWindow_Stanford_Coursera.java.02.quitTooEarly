@@ -1,0 +1,423 @@
+package datastructures.HashTable;
+
+import org.apache.log4j.Logger;
+
+import java.util.Arrays;
+import java.util.HashSet;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: thorick.chow@gmail.com
+ * Date: 8/9/13
+ * Time: 2:22 PM
+ * <p/>
+ * * The goal of this problem is to implement a variant of the 2-SUM algorithm
+ * (covered in the Week 6 lecture on hash table applications).
+ * <p/>
+ * The file contains 1 million integers, both positive and negative
+ * (there might be some repetitions!).
+ * <p/>
+ * This is your array of integers, with the ith row of the file specifying
+ * the ith entry of the array.
+ * <p/>
+ * Your task is to compute the number of target values t in the interval
+ * [-10000,10000] (inclusive)
+ * such that there are distinct numbers x,y in the input file that satisfy x+y=t.
+ * <p/>
+ * (NOTE: ensuring distinctness requires a one-line addition to
+ * the algorithm from lecture.)
+ * <p/>
+ * Write your numeric answer (an integer between 0 and 20001) in the space provided.
+ * <p/>
+ * OPTIONAL CHALLENGE: If this problem is too easy for you,
+ * try implementing your own hash table for it.
+ * <p/>
+ * For example, you could compare performance under the chaining and
+ * open addressing approaches to resolving collisions.
+ * <p/>
+ * <p/>
+ * <p/>
+ * <p/>
+ * with the wide range of input values and the small range of result values,
+ * there will be many different combinations of adding the input values
+ * that may yield identical values of t.
+ * We need a HashTable to know that we've already found some combination of x + y that has previously yielded t.
+ * <p/>
+ * <p/>
+ * 1.  sort the input  O(n log(n))
+ * 2.  since we want  -10000 <= t <= 10000  determine the absolute L-0 and R-0 array boundaries
+ * 3.  start at L-0, for L-0 determine what R(L-0) is.  Use HashTable HS0 to count unique array vals.
+ * the number of unique t in this region is n(n-1)/2
+ * 4.  advance to L-1, remove L-0 from HS0, determine what R(L-1) is
+ * and how many new unique values lie in the new range using a new HT1
+ * the number of new t values is  unique(HS0) * unique(HT1)
+ * <p/>
+ * when the original HS0 HashTable becomes empty, then switch role
+ * and HS0 becomes the HashTable to hold new values while HT1 becomes the table that
+ * you remove old values from.
+ * 5. repeat until you complete R-0: the original hard right boundary
+ * 6. report the total number of computed unique sums
+ */
+public class HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera
+        extends HashTable_2SUM_Stanford_Coursera_Base {
+
+
+  private Logger log =
+          Logger.getLogger(HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera.class);
+
+  private HashSet<Long> HS0 = new HashSet<Long>();
+
+
+  // input array boundaries
+  private long valueInputArrayFirst;
+  private long valueInputArrayLast;
+  private int indexInputArrayLast;
+
+  // the extremes of our calculation in the array
+  //   to be computed.
+
+  int indexLeftWindowStart = 0;
+  int indexRightWindowStart = 0;
+
+  int indexLeftCurrent = 0;
+  int indexRightCurrent = 0;
+
+
+  long valueLeftStopComputation = UPPERSUM/2 + 1;
+
+  public HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera(FileResult fr) {
+    inOrig = fr.array;
+    int arraySize = fr.arraySize;
+
+    // first step:  sort the input
+    Arrays.sort(inOrig);
+
+    valueInputArrayFirst = inOrig[0];
+    indexInputArrayLast = arraySize - 1;
+    valueInputArrayLast = inOrig[indexInputArrayLast];
+
+    boolean stop = false;
+
+    if (isP())
+      log.debug("input array first=" + valueInputArrayFirst + ", last[" + indexInputArrayLast + "]=" + valueInputArrayLast);
+
+
+    // initial search
+    long valueLeftCurrent = inOrig[indexLeftWindowStart];
+    long valueRightStartIdeal = 0;
+
+    if (valueLeftCurrent < 0) {
+      // the idea first right value to add, will be the one that yields L + R <= UPPER  AND  L + R >= LOWER
+      //    so R =  UPPER - L
+      valueRightStartIdeal = UPPERSUM - valueLeftCurrent;
+      if (isP())
+        log.debug("initial valueRightStartIdeal is " + valueRightStartIdeal);
+
+      // if RIGHT upper is beyond our reach, check that lower is within our reach, else we can't handle this left.
+      if (valueRightStartIdeal > valueInputArrayLast) {
+        long valueRightLowerBound = LOWERSUM - valueLeftCurrent;
+
+        // even the LOWER bound is out of our range
+        // find the FIRST right hand index that puts the LOWER bound within our reach
+        while (valueRightLowerBound > valueInputArrayLast) {
+          indexLeftWindowStart++;
+          valueLeftCurrent = inOrig[indexLeftWindowStart];
+          valueRightLowerBound = LOWERSUM - valueLeftCurrent;
+        }
+        // OK we have the smallest window start L and R that will enable us to meet the LOWER bound
+        valueRightStartIdeal = valueRightLowerBound;
+      }
+
+      if (isP())
+        log.debug("using indexLeftWindowStart[" + indexLeftWindowStart + "] for valueRightStartIdeal=" +
+                valueRightStartIdeal);
+
+      indexRightWindowStart = Arrays.binarySearch(inOrig, indexLeftWindowStart, indexInputArrayLast, valueRightStartIdeal);
+      if (indexRightWindowStart < 0) {
+        if (isP())
+          log.debug("got negative index on search " + indexRightWindowStart);
+        // set the right start position, decode the returned index
+        //  return value is (-(insertion point) - 1)   first index > key
+        indexRightWindowStart = indexRightWindowStart + 1;
+        indexRightWindowStart = -indexRightWindowStart;
+      }
+
+      if (isP())
+        log.debug("using starting right index indexRightWindowStart[" + indexRightWindowStart + "]=" + inOrig[indexRightWindowStart] +
+                ".  first sum will be " + (inOrig[indexLeftWindowStart] + inOrig[indexRightWindowStart] +
+                "\n sanity if we had chosen the NEXT right element the first SUM would be: " +
+                (inOrig[indexLeftWindowStart] + inOrig[indexRightWindowStart + 1])));
+    } else {
+      // the idea first right value to add, will be the one that yields L + R <= UPPER  AND  L + R >= LOWER
+      //    so R =  UPPER - L
+
+      // todo:  looks like a dup of logic above, make it common if so
+      valueRightStartIdeal = UPPERSUM - valueLeftCurrent;
+      if (isP())
+        log.debug("initial valueRightStartIdeal is " + valueRightStartIdeal);
+
+      // if RIGHT upper is beyond our reach, check that lower is within our reach, else we can't handle this left.
+      if (valueRightStartIdeal > valueInputArrayLast) {
+        long valueRightLowerBound = LOWERSUM - valueLeftCurrent;
+
+        // even the LOWER bound is out of our range
+        // find the FIRST right hand index that puts the LOWER bound within our reach
+        while (valueRightLowerBound > valueInputArrayLast) {
+          indexLeftWindowStart++;
+          valueLeftCurrent = inOrig[indexLeftWindowStart];
+          valueRightLowerBound = LOWERSUM - valueLeftCurrent;
+        }
+        // OK we have the smallest window start L and R that will enable us to meet the LOWER bound
+        valueRightStartIdeal = valueRightLowerBound;
+      }
+
+      if (isP())
+        log.debug("using indexLeftWindowStart[" + indexLeftWindowStart + "] for valueRightStartIdeal=" +
+                valueRightStartIdeal);
+
+      indexRightWindowStart = Arrays.binarySearch(inOrig, indexLeftWindowStart, indexInputArrayLast, valueRightStartIdeal);
+      if (indexRightWindowStart < 0) {
+        if (isP())
+          log.debug("got negative index on search " + indexRightWindowStart)
+                  ;
+        // set the right start position, decode the returned index
+        //  return value is (-(insertion point) - 1)   first index > key
+        indexRightWindowStart = indexRightWindowStart + 1;
+        indexRightWindowStart = -indexRightWindowStart;
+      }
+
+      if (isP())
+        log.debug("using starting right index indexRightWindowStart[" + indexRightWindowStart + "]=" + inOrig[indexRightWindowStart] +
+                ".  first sum will be " + (inOrig[indexLeftWindowStart] + inOrig[indexRightWindowStart] +
+                "\n sanity if we had chosen the NEXT right element the first SUM would be: " +
+                (inOrig[indexLeftWindowStart] + inOrig[indexRightWindowStart + 1])));
+    }
+
+    indexLeftCurrent = indexLeftWindowStart;
+    indexRightCurrent = indexRightWindowStart;
+
+    long prevSum = 0;
+    while (!stop) {
+
+      // we really should have caught this before here, but we haven't
+      if (indexLeftCurrent >= indexRightCurrent) {
+        break;
+      }
+      long sum = inOrig[indexLeftCurrent] + inOrig[indexRightCurrent];
+      if (isP()) {
+        log.debug("sum candidate L[" + indexLeftCurrent + "] + R[" + indexRightCurrent + "] "+inOrig[indexLeftCurrent]+
+                " + "+inOrig[indexRightCurrent]+" = " + sum);
+      }
+      if (sum >= LOWERSUM && sum <= UPPERSUM) {
+        HS0.add(sum);
+
+        if (isP()) {
+          log.debug("sanity with difference R["+indexRightCurrent+"] and R["+(indexRightCurrent-1)+"] = "+
+                       (inOrig[indexRightCurrent] - inOrig[indexRightCurrent-1]));
+
+               log.debug("sum - prevSum "+sum+" - "+prevSum+" = "+(sum - prevSum));
+        }
+        indexRightCurrent--;
+        prevSum = sum;
+        if (isP())
+          log.debug("added sum "+sum+" to HashSet.  try next R["+indexRightCurrent+"]\n");
+        if (indexRightCurrent > indexLeftCurrent)
+          continue;    // next
+      } else if (sum < LOWERSUM) {
+        stop = setNextWindow();
+
+      } else if (sum > UPPERSUM) {
+        // sum not up to minimum try next right if we can
+        indexRightCurrent--;
+        if (indexRightCurrent <= indexLeftCurrent) {
+          stop = setNextWindow();
+        }
+      }
+    }
+    int retVal = HS0.size();
+    printAlways("found " + retVal + " unique values of t");
+  }
+
+  protected boolean isP() {
+    return log.isDebugEnabled();
+  }
+
+  /**
+   * shared code to set the next window for the next LEFT value
+   * returns false if we are done processing
+   *
+   * @return  stop = true  if we're done
+   */
+  private boolean setNextWindow() {
+    String m = "setNextWindow: ";
+    boolean foundWindow = false;
+    boolean stop = false;
+
+    while (!foundWindow) {
+      foundWindow = windowNextBiggerLeft();
+
+      long leftValue = inOrig[indexLeftWindowStart];
+      if (leftValue >= valueLeftStopComputation) {
+        if (isP()) {
+          log.debug("at L["+indexLeftWindowStart+"]="+leftValue+", UPPER="+UPPERSUM+", exceeds 1/2 UPPER="+valueLeftStopComputation+
+          "  We are DONE.");
+        }
+        return true;
+      }
+      if (indexLeftWindowStart >= indexRightWindowStart) {
+               // we've exhausted the array done 1/2, we're done
+               return true;
+             }
+      if (!foundWindow) {
+        if (indexLeftWindowStart >= indexRightWindowStart) {
+          // we've exhausted the array done 1/2, we're done
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Does an trial search of a window for the NEXT left index array.
+   *
+   * @return true  if we found a window for the NEXT left index array
+   *         false  if we have not
+   */
+  private boolean windowNextBiggerLeft() {
+    String m = "windowNextBiggerLeft: ";
+    boolean stop = false;
+    int indexRightWindowStartOrig = indexRightWindowStart;
+
+    // we're done with this WINDOW corresponding to the fixed left end
+    // go on until we are done
+    indexLeftWindowStart++;
+
+    if (indexLeftWindowStart >= indexInputArrayLast) {
+      return false;
+    }
+
+    // we've fixed the new left side, now start from the previous right window start
+    // and find the first index whose sum exceeds the minimum
+    // this will be the new right window start
+    // if we cannot do this without exceeding the maximum, then are done !
+    //
+    // note that since L is increasing in size,
+    //   in order to find the new appropriate window we look for the next SMALLER R to fit our start criteria !
+    //
+    // new RHS outer bound would satisfy  LwindowStart + RwindowStart = UPPERSUM
+    //   so RwindowStart = UPPERSUM - LwindowStart
+
+    long valueRightStartIdeal = UPPERSUM - inOrig[indexLeftWindowStart];
+    indexRightWindowStart = Arrays.binarySearch(inOrig, indexLeftWindowStart, indexRightWindowStartOrig, valueRightStartIdeal);
+
+    if (indexRightWindowStart < 0) {
+      if (isP())
+        log.debug(m + "got negative index on search " + indexRightWindowStart)
+                ;
+      // set the right start position, decode the returned index
+      //  return value is (-(insertion point) - 1)   first index > key
+      indexRightWindowStart = indexRightWindowStart + 1;
+      indexRightWindowStart = -indexRightWindowStart;
+    }
+
+    long candidateSum = inOrig[indexLeftWindowStart] + inOrig[indexRightWindowStart];
+
+    if (isP())
+      log.debug(m + "valueRStartIdeal=" + valueRightStartIdeal + ", got[" + indexRightWindowStart + "]=" + inOrig[indexRightWindowStart]);
+
+    if (isP())
+      log.debug(m + "for L[" + indexLeftWindowStart + "]=" + inOrig[indexLeftWindowStart] +
+              ", computed new R[" + indexRightWindowStart + "]=" + inOrig[indexRightWindowStart] +
+              ", with sum=" + candidateSum);
+
+
+    while (candidateSum > UPPERSUM) {
+      indexRightWindowStart--;
+      if (indexRightWindowStart <= indexLeftWindowStart) {
+        if (isP())
+          log.debug(m + " right index decreased to left index..  we're DONE.\n");
+        return false;
+      }
+      candidateSum = inOrig[indexLeftWindowStart] + inOrig[indexRightWindowStart];
+      if (isP()) {
+        log.debug(m + "L[" + indexLeftWindowStart + "], next smaller R[" + indexRightWindowStart + "], got sum=" + candidateSum);
+      }
+    }
+
+    if (indexRightWindowStart <= indexLeftWindowStart) {
+      if (isP())
+        log.debug(m + "rightIndex=" + indexRightWindowStart + " is LESS than leftIndex=" + indexLeftWindowStart + ". we are DONE.\n");
+      return false;
+    }
+
+    if (candidateSum < LOWERSUM) {
+      if (isP())
+        log.debug(m + "sum < " + LOWERSUM + " did not find a window for L[" + indexLeftWindowStart+"], R["+
+        indexRightWindowStart+"]\n");
+      indexRightWindowStart = indexRightWindowStartOrig;
+      return false;
+    }
+
+    indexLeftCurrent = indexLeftWindowStart;
+    indexRightCurrent = indexRightWindowStart;
+    if (isP())
+      log.debug(m + " DONE.  new window selected. L{"+indexLeftCurrent+"], R["+indexRightWindowStart+"]\n\n");
+    return true;
+  }
+
+  public static void main(String[] args) {
+    FileResult fr = readDataFile(null);
+
+    HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera runner = new HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera(fr);
+  }
+
+  /**
+   *
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:244 - L[499990] + R[499991] sum candidate=0
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:252 - added sum 0 to HashSet.  try next R[499990]
+
+   found 428 unique values of t
+
+   */
+
+  /**
+   *
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:246 - L[60743] + R[939288] sum candidate=4935
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:253 - sanity with difference R[939288] and R[939287] = 10338
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:256 - sum - prevSum 4935 - 1209 = 3726
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:261 - added sum 4935 to HashSet.  try next R[939287]
+
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:246 - L[60743] + R[939287] sum candidate=-5403
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:253 - sanity with difference R[939287] and R[939286] = 203587
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:256 - sum - prevSum -5403 - 4935 = -10338
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:261 - added sum -5403 to HashSet.  try next R[939286]
+
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:246 - L[60743] + R[939286] sum candidate=-208990
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:460 - windowNextBiggerLeft: got negative index on search -939289
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:472 - windowNextBiggerLeft: valueRStartIdeal=87839504920, got[939288]=87839500786
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:475 - windowNextBiggerLeft: for L[60744]=-87839494920, computed new R[939288]=87839500786, with sum=5866
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:510 - windowNextBiggerLeft:  DONE.  new window selected.
+
+
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:246 - L[60744] + R[939288] sum candidate=5866
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:253 - sanity with difference R[939288] and R[939287] = 10338
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:256 - sum - prevSum 5866 - -5403 = 11269
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:261 - added sum 5866 to HashSet.  try next R[939287]
+
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:246 - L[60744] + R[939287] sum candidate=-4472
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:253 - sanity with difference R[939287] and R[939286] = 203587
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:256 - sum - prevSum -4472 - 5866 = -10338
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:261 - added sum -4472 to HashSet.  try next R[939286]
+
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:246 - L[60744] + R[939286] sum candidate=-208059
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:460 - windowNextBiggerLeft: got negative index on search -939289
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:472 - windowNextBiggerLeft: valueRStartIdeal=87839497097, got[939288]=87839500786
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:475 - windowNextBiggerLeft: for L[60745]=-87839487097, computed new R[939288]=87839500786, with sum=13689
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:489 - windowNextBiggerLeft: L[60745], next smaller R[939287], got sum=3351
+   HashTable_2SUM_04_ShrinkingWindow_Stanford_Coursera,main:510 - windowNextBiggerLeft:  DONE.  new window selected.
+
+
+   */
+
+}

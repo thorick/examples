@@ -19,12 +19,18 @@ public class PriorityQueue_ArrayHeap_String
   }
 
   @Override
-  public String removeMax() {
-    String s = super.removeMax();
+  public String removeTop() {
+    String s = super.removeTop();
     return s == null ? "" : s;
   }
 
-  protected String getNode(int index) {
+  @Override
+  public String removeNode(int index) {
+    String s = super.removeNode(index);
+    return s == null ? "" : s;
+  }
+
+  public String getNode(int index) {
     return heap[index];
   }
 
