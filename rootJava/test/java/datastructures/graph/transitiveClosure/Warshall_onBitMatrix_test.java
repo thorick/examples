@@ -66,6 +66,39 @@ public class Warshall_onBitMatrix_test {
   }
 
 
+  /**
+   * Warshall_onBitMatrix_test,main:75 -  final transitive graph
+   * Warshall_onBitMatrix_test,main:76 - 00 1110000000 0000000000 0000000000
+   * Warshall_onBitMatrix_test,main:77 - 00 0110000000 0000000000 0000000000
+   * Warshall_onBitMatrix_test,main:78 - 00 0010000000 0000000000 0000000000
+   * Warshall_onBitMatrix_test,main:79 - 00 0000000000 0000000000 0000000000
+   */
+  @Test
+  public void test01_linear() {
+    GraphAdjMatrixBit g = graph01_linear();
+    Warshall_onBitMatrix w = new Warshall_onBitMatrix(g);
+
+    w.transitiveClosure();
+    if (isP()) {
+      log.debug(" final transitive graph");
+      log.debug(w.printRow(1));
+      log.debug(w.printRow(2));
+      log.debug(w.printRow(3));
+      log.debug(w.printRow(4));
+    }
+
+    t(w, 1, 2);
+    t(w, 1, 3);
+    t(w, 1, 4);
+    t(w, 2, 3);
+    t(w, 2, 4);
+    t(w, 3, 4);
+
+    f(w, 2, 1);
+    f(w, 0, 4);
+
+  }
+
   private void t(Warshall_onBitMatrix g, int v, int w) {
     Assert.assertTrue("Expected " + v + "-->" + w + " to be connected but they are NOT! ", g.connected(v, w));
   }
@@ -76,6 +109,7 @@ public class Warshall_onBitMatrix_test {
 
   /**
    * simplest digraph
+   * <p/>
    * <p/>
    * 1  --->   2
    * <       |
@@ -97,6 +131,23 @@ public class Warshall_onBitMatrix_test {
     g.insert(4, 1);
     return g;
 
+  }
+
+
+  /**
+   * linear chain
+   * <p/>
+   * 1 ---> 2  --- >  3  -----> 4
+   *
+   * @return
+   */
+  private GraphAdjMatrixBit graph01_linear() {
+    GraphAdjMatrixBit g = new GraphAdjMatrixBit(32, true);
+
+    g.insert(1, 2);
+    g.insert(2, 3);
+    g.insert(3, 4);
+    return g;
   }
 
   private boolean isP() {
