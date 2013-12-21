@@ -1,0 +1,124 @@
+package datastructures.graph.allPairsShortestPaths;
+
+
+import datastructures.graph.basic.CloneableInteger;
+import datastructures.graph.basic.Edge;
+import datastructures.graph.basic.GraphAdjList;
+import datastructures.graph.basic.GraphAdjList_digraph;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
+
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: thorick.chow@gmail.com
+ * Date: 9/30/13
+ * Time: 8:41 PM
+ */
+public class BellmanFordTest {
+
+
+  private Logger log =
+          Logger.getLogger(BellmanFordTest.class);
+
+
+  //@Test
+  public void testSimple() {
+    GraphAdjList g = createSimpleGraph();
+    BellmanFord bf = getBellmanFord(g);
+    int sourceVertex = 1;
+    bf.compute(sourceVertex);
+
+    int[] toVertex = new int[] {1,2,3,4,5};
+    int[] expected = new int[] {0,2,3,4,6};
+    for (int i=1; i<toVertex.length; i++) {
+      int computedDist = bf.shortestDistanceTo(toVertex[i]);
+      Assert.assertEquals("From sourceVertex="+sourceVertex+" toVertex="+toVertex+
+         ", expected shortestDistance="+expected[i]+", instead we got="+
+              computedDist, expected[i], computedDist);
+    }
+
+    boolean hasNegativeCycle = bf.hasNegativeCycle();
+    Assert.assertFalse("Expected to find NO negative cycles, but we did !", hasNegativeCycle);
+  }
+
+
+  @Test
+  public void testSingleNegativeCycle() {
+    GraphAdjList g = createSingleNegativeCycleGraph();
+    BellmanFord bf = getBellmanFord(g);
+    int sourceVertex = 1;
+    bf.compute(sourceVertex);
+
+    /*
+    int[] toVertex = new int[] {1,2,3,4,5};
+    int[] expected = new int[] {0,2,3,4,6};
+    for (int i=1; i<toVertex.length; i++) {
+      int computedDist = bf.shortestDistanceTo(toVertex[i]);
+      Assert.assertEquals("From sourceVertex="+sourceVertex+" toVertex="+toVertex+
+         ", expected shortestDistance="+expected[i]+", instead we got="+
+              computedDist, expected[i], computedDist);
+    }
+    */
+
+    boolean hasNegativeCycle = bf.hasNegativeCycle();
+    Assert.assertTrue("Expected to find NO negative cycles, but we did !", hasNegativeCycle);
+  }
+
+
+
+  /*
+     Simple Lecture graph
+
+   */
+  private GraphAdjList createSimpleGraph() {
+    GraphAdjList g = new GraphAdjList_digraph(10);
+    insert(1,2,2,g);
+    insert(1,3,4,g);
+    insert(2,3,1,g);
+    insert(2,4,2,g);
+    insert(3,5,4,g);
+    insert(4,5,2,g);
+    return g;
+  }
+
+
+  /*
+    Simple graph with a single negative cycle
+
+    we are currently unable to detect this  !!
+
+   */
+  private GraphAdjList createSingleNegativeCycleGraph() {
+    GraphAdjList g = new GraphAdjList_digraph(10);
+    insert(1,2,2,g);
+    insert(1,4,4,g);
+    insert(2,3,1,g);
+    insert(2,4,1,g);
+    insert(3,5,-4,g);
+    insert(3,6,3,g);
+    insert(4,7,3,g);
+    insert(7,6,2,g);
+    return g;
+  }
+
+
+  /**
+    * convenience method to insert directional edge(s)
+    *
+    * @param v
+    * @param w
+    * @param g
+    */
+   private void insert(int v, int w, int weight, GraphAdjList g) {
+     CloneableInteger i = new CloneableInteger(weight);
+     Edge e =  new Edge(v, w, i);
+     g.insert(e);
+   }
+
+  private BellmanFord getBellmanFord(GraphAdjList g) {
+    return new BellmanFord_strict_wNegativeCycleDetection(g);
+  }
+
+}
