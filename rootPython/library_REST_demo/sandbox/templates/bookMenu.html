@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<!--
+            options
+               books
+               patrons
+
+               list all books
+               list all books checked out
+               list all books not checked out
+               check out book
+               return book
+               add book
+               remove book
+               find book
+
+
+               list all patrons
+               list all patrons with checked out books
+               list all patrons with no checked out books
+               patron return all books
+               patron checkout book
+               add patron
+               remove patron
+               find patron
+
+-->
+<head xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+    <title>library main menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+</head>
+<body>
+    <div class="container">
+        <h1>Options: Which do you want to work with ?</h1>
+        <br>
+        <form action="bookMenu" method="get">
+            <!--  /books/   GET  ALL with options:  none,  Checked Out = true, Checked Out = false -->
+            <input type="radio" name="bookChoice" id="allBooks" value="allBooks">List All Books</input>
+            <input type="radio" name="bookChoice" id="allBooksCheckedOut" value="allBooksCheckedOut">List All Books Checked Out</input>
+            <input type="radio" name="bookChoice" id="allBooksNotCheckedOut" value="allBooksNotCheckedOut">List All Books Not Checked Out</input>
+            <!--   /book/<bookName>  GET  -->
+            <input type="radio" name="bookChoice" id="findBook" value="findBook">Find Book</input>
+            <!--   /book/<bookName>  PUT  option set Checked Out = true   -->
+            <input type="radio" name="bookChoice" id="checkOutBook" value="checkOutBook">Check Out Book</input>
+            <!--   /book/<bookName>  PUT  option set Checked Out = false  -->
+            <input type="radio" name="bookChoice" id="returnBook" value="returnBook">Return Book</input>
+            <!--   /book/            POST to books  name = newBookName -->
+            <input type="radio" name="bookChoice" id="addNewBook" value="addNewBook">Add New Book</input>
+            <!--   /book/<bookName>  DELETE  -->
+            <input type="radio" name="bookChoice" id="removeBook" value="removeBook">Remove Book</input>
+            <input type="submit" value="Which would you like to do right now ?">
+        </form>
+        {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}
+        {% endif %}
+    </div>
+</body>
+</html>

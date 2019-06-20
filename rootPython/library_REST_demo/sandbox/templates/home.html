@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<!--
+            options
+               books
+               patrons
+
+               list all books
+               list all books checked out
+               list all books not checked out
+               check out book
+               return book
+               add book
+               remove book
+               find book
+
+
+               list all patrons
+               list all patrons with checked out books
+               list all patrons with no checked out books
+               patron return all books
+               patron checkout book
+               add patron
+               remove patron
+               find patron
+
+-->
+<head xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+    <title>library main menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+</head>
+<body>
+    <div class="container">
+        <h1>Options: Which do you want to work with ?</h1>
+        <br>
+        <form action="home" method="post">
+            <input type="radio" name="mainChoice" id="books" value="books">Books</input>
+            <input type="radio" name="mainChoice" id="patrons" value="patrons">Patrons</input>
+            <input type="submit" value="Which would you like to work with ?">
+        </form>
+        {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}
+        {% endif %}
+    </div>
+</body>
+</html>

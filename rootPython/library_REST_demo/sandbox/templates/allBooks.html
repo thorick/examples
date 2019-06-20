@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<!--
+            options
+               books
+               patrons
+
+               list all books
+               list all books checked out
+               list all books not checked out
+               check out book
+               return book
+               add book
+               remove book
+               find book
+
+
+               list all patrons
+               list all patrons with checked out books
+               list all patrons with no checked out books
+               patron return all books
+               patron checkout book
+               add patron
+               remove patron
+               find patron
+
+-->
+<head xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+    <title>All Books in the Library (unpaged)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+</head>
+<body>
+    <div class="container">
+        <h1>All Books in the Library (unpaged)</h1>
+        <br>
+        <form action="allBooks" method="post">
+            <h2>All Books in the Library (unpaged)</h2>
+            <ul>
+                { % for _book in _allBooks % }
+                <li>{{% _book %}}</li>
+                { % endfor % }
+            </ul>
+        </form>
+        {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}
+        {% endif %}
+    </div>
+</body>
+</html>
