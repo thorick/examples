@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .boxed {
+          border: 4px solid blue ;
+          width: 50% ;
+        }
+    </style>
+</head>
+<body>
+<div class="boxed">
+    <h2>Book Not Found</h2>
+    <br>
+    <!--   the output of the input is 'bookMenuChoice' which is available to the caller as an html form property by name -->
+    <form action="/library/bookNotFoundUserResponse" method="post">
+        <!--  /books/   GET  ALL with options:  none,  Checked Out = true, Checked Out = false -->
+        <input type="radio" name="bookMenuChoice" id="addBook" value="addBook">Add Missing Book</input>
+        <br>
+        <input type="radio" name="bookMenuChoice" id="returnToBookMenu" value="returnToBookMenu">Return to Book Menu</input>
+        <br><br>
+        <input type="submit" value="Choose Option and Click Here to go">
+    </form>
+    {% if error %}
+    <p class="error"><strong>Error:</strong> {{ error }}
+        {% endif %}
+</div>
+</body>
+</html>

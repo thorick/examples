@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ operationName }}</title>
+    <!--
+    <title>Add New Book To Library</title>
+    <h3>New Book Successfully Added to Library</h3>
+    -->
+    <h3>{{ status }}</h3>
+</head>
+<body>
+<div id="content">
+    <ul>
+        <div class="pre">        <!--  option 'pre' browser to preserve white space.  wrap text only on line breaks  -->
+            {{  bookTable  }}
+        </div>
+    </ul>
+</div>
+<div class="next_option">
+    <form method="post" action="/library/returnToBookMenu">
+        <h4>Options: Press Enter to return to Book Menu</h4>
+        <input type="submit" value="Return to Book Menu">
+    </form>
+</div>
+</body>
+</html>

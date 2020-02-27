@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<head>
+    <title>discover app login page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <style>
+        .boxed {
+          border: 4px solid green ;
+          width: 50% ;
+        }
+    </style>
+</head>
+<body>
+    <div class="boxed">
+        <h2>Please login to access the Library</h2>
+        <br>
+        <h3>Enter your username and password below</h3>
+        <br>
+        <form action="login" method="post">
+        <!--
+        <form action="" method="get">
+        -->
+            <input type="text" placeholder="Username" name="username" value="{{ request.form.username }}">
+            <input type="text" placeholder="Password" name="password" value="{{ request.form.password }}">
+            <br><br>
+            <input class="btn btn-default" type="submit" value="Login">
+        </form>
+        {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}
+        {% endif %}
+    </div>
+</body>
+</html>

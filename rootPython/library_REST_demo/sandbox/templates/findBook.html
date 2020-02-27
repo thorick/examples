@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Find Book</title>
+    <h3>Find Book</h3>
+    <h4>Enter Name of Book</h4>
+</head>
+<body>
+{% from "_formhelpers.html" import render_field %}
+<form method="post" action="/library/handleFindBook">
+    <!--
+    <input type="text" name="bookName">
+    -->
+    <dl>
+        {{ render_field(form.bookName) }}
+    </dl>
+    <p><input type="submit" value="Click to Find Book"></p>
+</form>
+</body>
+</html>

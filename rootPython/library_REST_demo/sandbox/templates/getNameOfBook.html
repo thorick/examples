@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ operationName }}</title>
+    <h3>{{ operationName }}</h3>
+    <h4>{{ instructions }}</h4>
+</head>
+<body>
+{% from "_formhelpers.html" import render_field %}
+<form method="post" action={{ actionURL }}>
+    <dl>
+        {{ render_field(form.bookName) }}
+    </dl>
+    <p><input type="submit" value="Click to Submit"></p>
+</form>
+</body>
+</html>

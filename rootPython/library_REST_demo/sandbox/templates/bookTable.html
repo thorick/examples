@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .pre {
+            white-space: pre;    <!--  option 'pre' browser to preserve white space.  wrap text only on line breaks  -->
+        }
+    </style>
+</head>
+<body>
+    <div class="pre">
+        <!--
+        <h3>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          Book List</h3>
+        -->
+        <h3>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ list_type }}</h3>
+        <h4>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Book Name -------------------------- Checkout Patron Name</h4>
+    </div>
+    <div id="content">
+        <ul>
+            <div class="pre">
+               {{  bookTable  }}
+            </div>
+        </ul>
+    </div>
+    <div class="next_option">
+        <form method="post" action="/library/returnToBookMenu">
+            <!--
+            <h4>Options: Press Enter to return to Book Menu</h4>
+            -->
+            <input type="submit" value="Click to Return to Book Menu">
+        </form>
+    </div>
+</body>
+</html>

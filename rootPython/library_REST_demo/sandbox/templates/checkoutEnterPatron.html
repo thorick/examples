@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .pre {
+            white-space: pre;    <!--  option 'pre' browser to preserve white space.  wrap text only on line breaks  -->
+        }
+    </style>
+</head>
+<body>
+{% from "_formhelpers.html" import render_field %}
+    <div class="pre">
+        <!--
+        <h3>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          Book List</h3>
+        -->
+        <h3>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ list_type }}</h3>
+        <h4>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Book Name -------------------------- Checkout Patron Name</h4>
+    </div>
+    <div id="content">
+        <ol>
+            <div class="pre">
+               {{  bookTable  }}
+            </div>
+        </ol>
+        <br>
+        <ol>
+            {{ message }}
+        </ol>
+        <ol>
+            {{ instruction }}
+        </ol>
+    </div>
+    <div class="next_option">
+        <form method="post" action="/library/handleNewCheckoutPatron">
+            <dl>
+                {{ render_field(form.patronName) }}
+            </dl>
+            <br>
+            <br>
+            <input type="submit" value="Click to Return to Book Menu">
+        </form>
+    </div>
+</body>
+</html>

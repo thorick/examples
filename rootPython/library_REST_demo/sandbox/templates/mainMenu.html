@@ -30,32 +30,21 @@
     <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
     <style>
         .boxed {
-          border: 4px solid blue ;
+          border: 4px solid green ;
           width: 50% ;
         }
     </style>
 </head>
 <body>
     <div class="boxed">
-        <h2>All Things Patrons</h2>
+        <h2>Which do you want to work with ?</h2>
         <br>
-        <form action="/library/patronMenu" method="post">
-            <!--  /patrons/   GET  ALL with options:  none,  Checked Out = true, Checked Out = false -->
-            <input type="radio" name="patronChoice" id="allPatrons" value="allPatrons">List All Patrons</input>
+        <form action="/library/mainMenu" method="post">
+            <input type="radio" name="mainChoice" id="books" value="books">Books</input>
             <br>
-            <!--   /patron/<patronName>  GET  -->
-            <input type="radio" name="patronChoice" id="findPatron" value="findPatron">Find Patron</input>
-            <br>
-            <!--   /patron/            POST to patrons  name = newpatronName -->
-            <input type="radio" name="patronChoice" id="addNewPatron" value="addNewPatron">Add New Patron</input>
-            <br>
-            <!--   /patron/<patronName>  DELETE  -->
-            <input type="radio" name="patronChoice" id="removePatron" value="removePatron">Remove Patron</input>
-            <br>
-            <br>
-            <input type="radio" name="patronChoice" id="returnToMainMenu" value="returnToMainMenu">Return to Main Menu</input>
+            <input type="radio" name="mainChoice" id="patrons" value="patrons">Patrons</input>
             <br><br>
-            <input type="submit" value="click to go">
+            <input type="submit" value="Click to Go">
         </form>
         {% if error %}
         <p class="error"><strong>Error:</strong> {{ error }}

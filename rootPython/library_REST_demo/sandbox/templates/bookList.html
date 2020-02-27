@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .pre {
+            white-space: pre;   <!--  option 'pre' browser to preserve white space.  wrap text only on line breaks  -->
+        }
+    </style>
+</head>
+<body>
+	<!--    help:   someone that is better at HTML, show me a better way to indent the title !   -->
+    <h2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          Book List</h2>
+    <h3>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Book Name -------------------------- Checkout Patron Name</h3>
+    <div id="content">
+        <ul>
+            <div class="pre">
+                {% for book in booklist %}
+                    {{ book }}
+                {% endfor %}
+            </div>
+        </ul>
+    </div>
+    <div class="next_option">
+        <form method="post" action="/library/returnToBookMenu">
+            <h4>Options: Press Enter to return to Book Menu</h4>
+            <input type="submit">
+        </form>
+    </div>
+</body>
+</html>

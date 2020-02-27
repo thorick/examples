@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Book To Library</title>
+    <h3>New Book</h3>
+</head>
+<body>
+    {% from "_formhelpers.html" import render_field %}
+    <form method="post" action="/library/handleAddNewBook">
+        <dl>
+            {{ render_field(form.bookName) }}
+            {{ render_field(form.patronName) }}
+        </dl>
+        <p><input type="submit" value="Click to Return to Book Menu"></p>
+    </form>
+</body>
+</html>
