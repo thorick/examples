@@ -40,6 +40,55 @@ import org.apache.log4j.Logger;
  * <p>
  * each tree entry takes 2 array positions for children:  0  LEFT  1 RIGHT
  * node LEFT CHILD pos  is index * 2  node RIGHT CHILD pos is  (index * 2) + 1
+ *
+ *
+ * Here is sample output from running testcase0  nice !
+ *
+ * =====================================
+ * LOAD TEST 0
+ *
+ *   Loaded nodes:
+ * (0)  [val=0, freq=1]
+ * (1)  [val=1, freq=4]
+ * (2)  [val=2, freq=10]
+ * (3)  [val=3, freq=1]
+ * (4)  [val=4, freq=7]
+ * (5)  [val=5, freq=3]
+ *
+ * -----------------------------
+ *
+ * ----------------------------------
+ * final main value matrix
+ * 5  [47] [44] [36] [15] [13] [ 3]
+ *    [38] [35] [27] [ 9] [ 7] [ 0]
+ *    [23] [20] [12] [ 1] [ 0] [ 0]
+ *    [21] [18] [10] [ 0] [ 0] [ 0]
+ *    [ 6] [ 4] [ 0] [ 0] [ 0] [ 0]
+ * 0  [ 1] [ 0] [ 0] [ 0] [ 0] [ 0]
+ *      0    1    2    3    4    5
+ *
+ * ----------------------------------
+ *
+ * ----------------------------------
+ * final chosen root matrix
+ * 5  [2] [2] [2] [4] [4] [0]
+ *    [2] [2] [2] [4] [0] [0]
+ *    [2] [2] [2] [0] [0] [0]
+ *    [2] [2] [0] [0] [0] [0]
+ *    [1] [0] [0] [0] [0] [0]
+ * 0  [0] [0] [0] [0] [0] [0]
+ *     0   1   2   3   4   5
+ *
+ * ----------------------------------
+ *
+ * ----------------------------------
+ * final tree graph adjacency matrix where root node is 2
+ *    [x] [x] [4] [x] [5] [x]
+ * 0  [x] [0] [1] [x] [3] [x]
+ *     0   1   2   3   4   5
+ *
+ * ----------------------------------
+ * =====================================
  */
 public class OptimalBinarySearchTree {
     private static Logger log =
