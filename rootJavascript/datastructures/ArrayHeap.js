@@ -172,8 +172,10 @@ function swapDownUntil(index) {
     currValue = heap[currIndex];
     leftChildIndex = currIndex * 2;
     rightChildIndex = (currIndex * 2) + 1;
-    leftChildValue = heap[leftChildIndex];
-    rightChildValue = heap[rightChildIndex];
+    leftChildValue = Number.MIN_SAFE_INTEGER;
+    rightChildValue = Number.MIN_SAFE_INTEGER;
+    //leftChildValue = heap[leftChildIndex];
+    //rightChildValue = heap[rightChildIndex];
     if (leftChildIndex < currNextInsertIndex) {
       leftChildValue = heap[leftChildIndex];
     }
@@ -184,7 +186,7 @@ function swapDownUntil(index) {
 }
 function setHeap(array) {
   var arraySize = array.length;
-  initializeArrayToSize(array, arraySize);
+  initializeArrayToSize(arraySize);
   P('setHeap  now do putNew on the input array values');
   for (position = 0; position < arraySize; position++) {
     P(' setHeap:  do putNew for array position=' + position + '  value=' + array[position]);
@@ -229,7 +231,9 @@ function largestNSum(numbers, sumOfLargestNsize)
   var sum = 0;
   for (count = 1; count <= sumOfLargestNsize; count++) {
     var topVal = poll();
+    P('largestNSum:  after poll() topVal='+topVal+', sum before add='+sum);
     sum = sum + topVal;
+    P('largestNSum:  after add of topVal, sum='+sum);
   }
   return sum;
 }
@@ -249,13 +253,13 @@ function run_demo()
 }
 
 function run_user_input_demo() {
-  var n1 = window.prompt('An example of a Heap implemented as an array in javascript.\n\nYou will Enter 5 numbers.\n' +
+  var n1 = Number(window.prompt('An example of a Heap implemented as an array in javascript.\n\nYou will Enter 5 numbers.\n' +
                           'You will Enter how many of the largest of those numbers to add together.\n\n' +
                           'This is implemented by adding each number to a Heap/Priority Queue.\n'+
                           'The Heap maintains the highest values at its top so we just pull the first two entries off of the Heap and add them.\n\n'+
                           'The Heap Datastructure is implemented in javascript.\n'+
                           'You can see the js code loaded with this webpage as ArrayHeap.js\n\n'+
-                          'Enter Number 1: ');
+                          'Enter Number 1: '));
   var n2 = Number(window.prompt('Enter Number 2: '));
   var n3 = Number(window.prompt('Enter Number 3: '));
   var n4 = Number(window.prompt('Enter Number 4: '));
@@ -267,7 +271,7 @@ function run_user_input_demo() {
   input = [n1, n2, n3, n4, n5];
   var inputAsString = printLinearArray(input);
   var result = largestNSum(input, howMany);
-  alert('Demo results:  for input array '+inputAsString+'\n\nthe sum of the largest '+howMany+' elements is: '+result);
+  alert('Demo results:  for input array '+inputAsString+'\n\nthe sum of the largest '+howMany+' elements is: '+result+"\n\nDONE !");
 }
 /////////////////////////////////////////
 //  stop here
