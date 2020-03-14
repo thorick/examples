@@ -1,13 +1,10 @@
 package datastructures.graph.allPairsShortestPaths;
 
-import org.apache.log4j.Logger;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
-
 
 /**
  * Created with IntelliJ IDEA.
@@ -33,7 +30,7 @@ import java.util.*;
  * (unless it stops early by detecting no changes before then)
  * <p/>
  *
- * simple sample:
+ * simpleGraph:
  *
  * input graph:
  *
@@ -49,9 +46,12 @@ import java.util.*;
  *
  * num vertices=5, num edges=6
  *  read 6 edges.  read 0 negative edges.
- * begin BellMan Ford for source vertex=1, number of vertices=5, do for n-1 iterations n-1=5
- *  graph simpleGraph hasNegativeCycle=true
+ * begin BellMan Ford for source vertex=1
+ *   number of vertices n=5
+ *   will check for negative cycles=true
+ *   do for iterations=6
  *
+ *  graph simpleGraph hasNegativeCycle=false
  *
  * 5  [2147483647] [2147483647] [2147483647] [         7] [         6] [         6]
  *    [2147483647] [2147483647] [         4] [2147483647] [2147483647] [2147483647]
@@ -69,26 +69,18 @@ import java.util.*;
  *
  */
 public class BellmanFord_best {
-
-    private boolean debug = true;
-    private Logger log =
-            Logger.getLogger(BellmanFord_best.class);
-
+    private boolean debug = true;                     // do not depend on setting loggers
+    private boolean readDataFile = false;             // local data for ease of download and demo
+    private boolean computeHasNegativeCycles = true;
     private final int NO_VALUE = Integer.MAX_VALUE;
     private int graphVertexArraySize;
     private int minVertexNumber;
     private int maxVertexNumber;
     private int numberOfVertices;
-    private int edgesInGraph;
     private boolean hasNegativeCycle = false;
     private GraphAdjList g;
     int[][] iterationValueArr;      // there can be a max of n-1 iterations where n = number of nodes
-    // there are n nodes
-    // so an n x n matrix should do
-
-    private int maxEdgeLimit;    // stop normal BF after this many edges (V - 1)
     private int sourceVertex = -1;  // keep track of who we ran this on.
-    private boolean ranOnce;     // we ran complete BF at least once
 
     public BellmanFord_best() {
     }
@@ -100,42 +92,43 @@ public class BellmanFord_best {
      */
     public int compute() {
         sourceVertex = g.lowestVertexNumber;
-
         minVertexNumber = 1;
         maxVertexNumber = g.getHighestVertexNumber();
         numberOfVertices = maxVertexNumber;
-        // vertices start at 1 (and not 0) in the course problems
+        // vertices start at 1 (and not 0) in the input graphs
         graphVertexArraySize = maxVertexNumber + 1;
-
-        // we only need this many max path lengths to cover the entire graph minus any cycles
-        maxEdgeLimit = g.vCount() - 1;
-        edgesInGraph = g.eCount();
-
+        if (computeHasNegativeCycles) {
+            graphVertexArraySize++;      // requires space for an additional cycle
+        }
         iterationValueArr = new int[graphVertexArraySize][graphVertexArraySize];
-    /*
-    // at iteration 0, the value of the path to each node is zero because there are no paths
-    for (int v = 0; v < graphVertexSize; v++) {
-      iterationValueArr[0][v] = 0;
-    }
-    */
 
         // after iteration 0, any edge that reaches a node for the first time is the lowest cost edge
-        // force the acceptance of the first edge
+        // force the acceptance of the first edge.  NO_VALUE is the largest possible int
         for (int i = 0; i < graphVertexArraySize; i++) {
             for (int v = 0; v < graphVertexArraySize; v++) {
                 iterationValueArr[i][v] = NO_VALUE;
             }
         }
-        // the source vertex is a special case
+        // the source vertex is a special case, it's minimum path cost is zero since it is the starting point
         iterationValueArr[0][sourceVertex] = 0;
         iterationValueArr[1][sourceVertex] = 0;
 
         int countDown = numberOfVertices;
+        if (computeHasNegativeCycles) {
+            countDown++;
+        }
         p("begin BellMan Ford for source vertex=" + sourceVertex +
-                ", number of vertices=" + g.vCount() +
-                ", do for n-1 iterations n-1=" + countDown);
+                "\n  number of vertices n=" + g.vCount() +
+                "\n  will check for negative cycles=" + computeHasNegativeCycles +
+                "\n  do for iterations=" + countDown+
+                "\n");
 
         runCompleteBF(sourceVertex, countDown);
+        if (computeHasNegativeCycles) {
+            if (hasNegativeCycle) {
+                return -1;
+            }
+        }
         return 0;
     }
 
@@ -148,6 +141,11 @@ public class BellmanFord_best {
     }
 
     private void bf(List<Integer> nextIterationNodeNumbers, int iteration, int countDown) {
+        if (countDown <= 0) {
+            return;
+        }
+        boolean isNegativeCycleCheckIteration = (countDown == 1 && computeHasNegativeCycles);
+        /*
         if (nextIterationNodeNumbers.size() <= 0) {
             return;
         }
@@ -156,12 +154,18 @@ public class BellmanFord_best {
         if (iteration >= numberOfVertices) {
             return;      // done
         }
+        */
+
         boolean foundLowerCostPath = false;
         List<Integer> nextNextIterationNodeNumbers = new ArrayList<>();   // the nodes for the next iteration
         for (Integer currIterationNodeNumber : nextIterationNodeNumbers) {
             LinkedNode node = g.getAdjList(currIterationNodeNumber);
             while (node != null) {
                 int nodeNumber = node.v;
+                if (isNegativeCycleCheckIteration) {
+                    nextNextIterationNodeNumbers.add(nodeNumber);   // if we will be doing a negative cycle check
+                                                                    // we have to have this node to run the next iteration on
+                }
                 if (nodeNumber != currIterationNodeNumber) {
                     throw new RuntimeException("Error !  for currIterationNodeNumber=" + currIterationNodeNumber + " got unexpected edge from: " +
                             nodeNumber);
@@ -189,6 +193,9 @@ public class BellmanFord_best {
                 if (candidate < iterationValueArr[iteration - 1][destNodeNumber]) {
                     iterationValueArr[iteration][destNodeNumber] = candidate;
                     foundLowerCostPath = true;
+                    if (isNegativeCycleCheckIteration) {
+                        hasNegativeCycle = true;    // if we have done more than the whole graph and still get a lower value, then we have a negative cycle
+                    }
                 } else {
                     iterationValueArr[iteration][destNodeNumber] = iterationValueArr[iteration - 1][destNodeNumber];
                 }
@@ -196,11 +203,8 @@ public class BellmanFord_best {
             }
             iteration++;
             countDown--;
-            if (countDown < 0) {
-                if (foundLowerCostPath) {
-                    hasNegativeCycle = true;
-                    return;
-                }
+            if (isNegativeCycleCheckIteration) {
+                return;
             }
             // now recurse
             bf(nextNextIterationNodeNumbers, iteration, countDown);
@@ -373,6 +377,36 @@ public class BellmanFord_best {
         }
     }
 
+    protected void ingestData(String[] in) {
+        if (in.length <= 0) {
+            return;
+        }
+        String line = in[0];
+        String[] s = line.split("\\s+");
+        int numVertices = Integer.valueOf(s[0]);
+        int numEdges = Integer.valueOf(s[1]);
+        p(" num vertices=" + numVertices + ", num edges=" + numEdges);
+        int lc = 0;
+        for (int i=1; i<in.length; i++) {
+            line = in[i];
+            //System.err.println("read line '" + line + "'");
+            s = line.split("\\s+");
+            int v = Integer.valueOf(s[0]);
+            int w = Integer.valueOf(s[1]);
+            int weight = Integer.valueOf(s[2]);
+            Edge e = new Edge(v, w, weight);
+            g.insert(e);
+            lc++;
+            if (lc % 10 == 0) {
+                //  System.err.println("read vertex #" + i + " = " + i);
+            }
+        }
+    }
+    public void readDataString(String s) {
+        g = new GraphAdjList(1001);
+        String[] sa = s.split("\\n");
+        ingestData(sa);
+    }
     protected void readDataFile(String inputFName) {
         //
         //  Graph of no more than 1000 vertices
@@ -393,41 +427,21 @@ public class BellmanFord_best {
             System.err.println(" cannot open data file " + fileName);
         }
 
+        List<String> list = new ArrayList<>();
         // get count so that we can build only the array we need
         try {
             BufferedReader br = new BufferedReader(fileR);
             String line;
-
-            line = br.readLine();
-            String[] s = line.split("\\s+");
-            int numVertices = Integer.valueOf(s[0]);
-            int numEdges = Integer.valueOf(s[1]);
-
-            p(" num vertices=" + numVertices + ", num edges=" + numEdges);
-            boolean hasNegativeEdge = false;
-
-            int i = 0;
             while ((line = br.readLine()) != null) {
-                //System.err.println("read line '" + line + "'");
-                s = line.split("\\s+");
-                int v = Integer.valueOf(s[0]);
-                int w = Integer.valueOf(s[1]);
-                int weight = Integer.valueOf(s[2]);
-                Edge e = new Edge(v, w, weight);
-                g.insert(e);
-                if (weight < 0) negativeEdgeCount++;
-                i++;
-                if (i % 10 == 0) {
-                    //  System.err.println("read vertex #" + i + " = " + i);
-                }
+                list.add(line);
             }
             br.close();
-            p(" read " + i + " edges.  read " + negativeEdgeCount + " negative edges.");
         } catch (IOException e) {
             System.err.println("exception " + e.getMessage());
         }
+        String[] data = list.toArray(new String[]{});
+        ingestData(data);
     }
-
 
     String printPadded2DIntArray(int[][] v) {
         int xlen = v.length;
@@ -517,20 +531,16 @@ public class BellmanFord_best {
 
         public GraphAdjList() {
         }
-
         public GraphAdjList(int sizeLimit) {
             this.sizeLimit = sizeLimit;
             adj = new LinkedNode[sizeLimit];
         }
-
         public int vCount() {
             return vCount;
         }
-
         public int eCount() {
             return eCount;
         }
-
         public int getHighestVertexNumber() {
             return highestVertexNumber;
         }
@@ -628,10 +638,6 @@ public class BellmanFord_best {
             }
             return sb.toString();
         }
-
-        protected boolean isP() {
-            return log.isDebugEnabled();
-        }
     }
 
     public class LinkedNode {
@@ -708,33 +714,75 @@ public class BellmanFord_best {
             this.w = w;
             this.value = val;
         }
-
         public int getValue() {
             return value;
         }
-
         @Override
         public String toString() {
             return "Edge: " + v + "-" + w + ", value=" + value;
         }
     }
 
-    public static void main(String[] args) {
-        String d = "G:\\b\\notes\\java\\my_examples\\src\\main\\resources\\datastructures\\graph\\allPairsShortestPaths";
-        String f = "simpleGraph";
-        String fileName = d + "\\" + f;
-        BellmanFord_best prog = new BellmanFord_best();
-        prog.readDataFile(fileName);
-        prog.compute();
+    static String simpleGraphAsString() {
+        return "5 6\n" +
+                "1 2 4\n" +
+                "1 3 2\n" +
+                "3 2 1\n" +
+                "2 5 4\n" +
+                "3 4 2\n" +
+                "4 5 2";
+    }
 
+    static String simpleNegativeCycleGraphAsString() {
+        return "5 6\n" +
+                "1 2 2\n" +
+                "1 3 1\n" +
+                "3 4 5\n" +
+                "2 4 -10\n" +
+                "4 5 1\n" +
+                "5 2 2";
+    }
+    public static void main(String[] args) {
+        boolean readDataFromFile = false;
+        BellmanFord_best prog = new BellmanFord_best();
+        if (readDataFromFile) {
+            String d = "G:\\b\\notes\\java\\my_examples\\src\\main\\resources\\datastructures\\graph\\allPairsShortestPaths";
+            //String f = "simpleGraph";
+            String f = "simpleNegativeCycleGraph";
+            String fileName = d + "\\" + f;
+            prog.readDataFile(fileName);
+        }
+        else {
+            System.out.print("Hi.  Welcome to the Bellman-Ford Dynamic Programming Single Source all pairs minimum path demo.\n" +
+                    "  Given an input Directed Graph with Weighted Edges, starting from the lowest positive numbered vertex as the origin \n" +
+                    "  Find the lowest cost paths from the origin node to each destination node.\n"+
+                    "  The algo is invalid if the graph contains a negatively valued cycle.\n"+
+                    "  If there is a negatively valued cycle, this algo will find it and report so.\n\n"+
+                    "     Which demo would you like to run ?\n"+
+                    "        1)  simple graph.\n"+
+                    "        2)  simple graph with negative cycle.\n"+
+                    "     Choice: ");
+            Scanner s = new Scanner(System.in);
+            int i = s.nextInt();
+            if (i < 1 || i > 2) {
+                System.out.println("\n you entered: "+i+", you must enter '1' or '2'.  exiting.  try running demo again from scratch.");
+            }
+            String in;
+            if (i == 1) {
+                in = simpleGraphAsString();
+            }
+            else {
+                in = simpleNegativeCycleGraphAsString();
+            }
+            prog.readDataString(in);
+        }
+        prog.compute();
         boolean hasNegativeCycle = prog.hasNegativeCycle();
-        System.err.println(" graph " + f + " hasNegativeCycle=" + hasNegativeCycle+"\n\n");
+        System.err.println(" graph has Negative Cycle = " + hasNegativeCycle+"\n\n");
 
         // print the computed array
         prog.printResultArray();
-
         String edges = prog.printMinimumPathEdges();
         System.err.println("Minimum path edges:\n"+edges+"\n");
-
     }
 }
