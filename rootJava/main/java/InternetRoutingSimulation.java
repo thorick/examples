@@ -1,4 +1,3 @@
-package datastructures.graph.allPairsShortestPaths;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -1758,69 +1757,6 @@ public class InternetRoutingSimulation {
         prog.WAIT_GRAPH_OPEN();
 
         cons("\n\n     D E M O   E N D\n==================================\n\n\n");
-/*
-        cost = 1;
-        n4.addNewConnectionTo(n2.netNodeNumber, cost);
-        cons("connected "+n4.getName()+" to "+n2.getName()+" with cost: "+cost);
-
-        m = "This is a Message from " + n1.getName() + " to " + n4.getName();
-        cons("send a message from " + n1.getName() + " to " + n4.getName() + "  '" + m + "'");
-        message = n1.new Message(MessageType.SEND_MESSAGE, n1, n4);
-        message.message = m;
-        n1.send(message);
-
-
-        sleepTime = 1000;
-        cons("go to sleep " + sleepTime + " to allow network changes to propagate\n");
-        try {
-            Thread.sleep(sleepTime);    // give the new connection time to settle into the network
-        } catch (InterruptedException e) {
-        }
-
-
-        m = "This is a Message from " + n1.getName() + " to " + n3.getName();
-        cons("send a message from " + n1.getName() + " to " + n3.getName() + "  '" + m + "'");
-        message = n1.new Message(MessageType.SEND_MESSAGE, n1, n3);
-        message.message = m;
-        n1.send(message);
-
-        cost = 1;
-        cons("\nadd new connection " + n1.getName() + " to " + n4.getName() + " with cost: " + cost + "\n");
-        prog.newConnection(n1.netNodeNumber, n4.netNodeNumber, cost);
-
-        sleepTime = 100;
-        cons("go to sleep " + sleepTime + " to allow network changes to propagate\n");
-        try {
-            Thread.sleep(sleepTime);    // give the new connection time to settle into the network
-        } catch (InterruptedException e) {
-        }
-
-        m = "This is a Message from " + n1.getName() + " to " + n3.getName() + "  AGAIN  check the path cost now.";
-        cons("send a message from " + n1.getName() + " to " + n3.getName() + "  '" + m + "'");
-        message = n1.new Message(MessageType.SEND_MESSAGE, n1, n3);
-        message.message = m;
-        n1.send(message);
-
-        cost = 3;
-        cons("\nadd new connection " + n2.getName() + " to " + n4.getName() + " with cost: " + cost + "\n");
-        prog.newConnection(n2.netNodeNumber, n4.netNodeNumber, cost);
-        cons("send a message from " + n1.getName() + " to " + n3.getName() + "  '" + m + "'");
-        message = n1.new Message(MessageType.SEND_MESSAGE, n1, n3);
-        message.message = m;
-        n1.send(message);
-
-
-
-        cost = 1;
-        n4.addNewConnectionTo(n1.netNodeNumber, cost);
-        cons("connected "+n4.getName()+" to "+n1.getName()+" with cost: "+cost);
-
-        cons("go to sleep "+sleepTime+" to allow network changes to propagate\n");
-        try {
-            Thread.sleep(sleepTime);    // give the new connection time to settle into the network
-        } catch (InterruptedException e) {}
-
-*/
     }
 
     public static void main(String[] args) {
