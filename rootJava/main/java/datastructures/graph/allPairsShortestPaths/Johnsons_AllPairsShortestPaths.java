@@ -64,10 +64,10 @@ import java.util.Set;
 
 
  */
-public class Johnsons_AllPairsShortestPaths_Stanford_Coursera implements Johnsons_APSP {
+public class Johnsons_AllPairsShortestPaths  {
 
   private Logger log =
-          Logger.getLogger(Johnsons_AllPairsShortestPaths_Stanford_Coursera.class);
+          Logger.getLogger(Johnsons_AllPairsShortestPaths.class);
 
 
   private GraphAdjList graphOriginal;
@@ -140,7 +140,7 @@ public class Johnsons_AllPairsShortestPaths_Stanford_Coursera implements Johnson
   int actualShortestShortestPathLength = Integer.MAX_VALUE;
 
 
-  public Johnsons_AllPairsShortestPaths_Stanford_Coursera(GraphAdjList_digraph g) {
+  public Johnsons_AllPairsShortestPaths(GraphAdjList_digraph g) {
     graphOriginal = g;
     origGraphHighestNumberedVertex = graphOriginal.getHighestVertexNumber();
     graph = g.copy();
@@ -586,7 +586,7 @@ public class Johnsons_AllPairsShortestPaths_Stanford_Coursera implements Johnson
     String fileName = d + "\\" + f;
     GraphAdjList_digraph g = readDataFile(fileName);
 
-    Johnsons_AllPairsShortestPaths_Stanford_Coursera prog = new Johnsons_AllPairsShortestPaths_Stanford_Coursera(g);
+    Johnsons_AllPairsShortestPaths prog = new Johnsons_AllPairsShortestPaths(g);
     prog.compute();
 
     // boolean hasNegativeCycle = prog.hasNegativeCycle();
