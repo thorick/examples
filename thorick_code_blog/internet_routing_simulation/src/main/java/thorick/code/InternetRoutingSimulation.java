@@ -78,14 +78,14 @@ public class InternetRoutingSimulation {
     static boolean DEBUG = false;
 
     // print higher level algorithm progress
-    static boolean DEBUG_PROTOCOL = false;
+    static boolean DEBUG_PROTOCOL = true;
 
     // only compute the paths to a single node
     static boolean DEBUG_DO_ONLY_ONE_SOURCE_NODE_CALCULATION = false;
 
     // only show higher level algorithm progress for a single source node
     static boolean DEBUG_FILTER_OUTPUT_ONE_SINGLE_SOURCE_NODE = true;
-    static int DEBUG_FILTER_OUTPUT_ONE_SINGLE_SOURCE_NODE_NUMBER = 4;   // specify which single source to show
+    static int DEBUG_FILTER_OUTPUT_ONE_SINGLE_SOURCE_NODE_NUMBER = 1;   // specify which single source to show
     static boolean PRINT_FINAL_ROUTING_TABLE = true;    // print the min cost path routing table after each network computation
 
 
@@ -184,7 +184,6 @@ public class InternetRoutingSimulation {
         Edge e1 = g.newEdge(source, dest, cost);
         g.insert(e1);
         sNode.edges.put(dest, e1);
-        sNode.firstHops.add(dest);
         sNode.initializeForGlobalCalculation();
         NetNode.TableEntry te1 = sNode.new TableEntry(source, dest, cost, dest);
         sNode.nodeTable.put(dest, te1);
@@ -194,7 +193,6 @@ public class InternetRoutingSimulation {
         Edge e2 = g.newEdge(dest, source, cost);
         g.insert(e2);
         dNode.edges.put(source, e2);
-        dNode.firstHops.add(source);
         dNode.initializeForGlobalCalculation();
         NetNode.TableEntry te2 = dNode.new TableEntry(dest, source, cost, source);
         dNode.nodeTable.put(source, te2);
@@ -271,13 +269,6 @@ public class InternetRoutingSimulation {
 
         // for each source node route calculation there is a set of iteration data for this node
         Map<Integer, PathCalcElement> pathCalcElementTable = new HashMap<>();
-
-        // for each source node route calculation
-        // when a node is the leader node for a source round this is the stack of nodes
-        // that need to run calculations
-        Map<Integer, Stack<SourceRoundMessage>> nodeLeaderSingleNodeCalculationStackMap = new HashMap<>();
-
-        Set<Integer> firstHops = new HashSet<>();               // our immediate neighbors
         Map<Integer, Edge> edges = new HashMap<>();             // the edges to our immediate neighbors
         Set<Integer> childCalculations = new HashSet<>();
 
@@ -322,7 +313,6 @@ public class InternetRoutingSimulation {
                 e.beforeGlobalCalculationReset();
             }
             nodeTable.clear();      // recompute the entire table for the new graph
-            firstHops.clear();
             return true;
         }
 
@@ -380,7 +370,6 @@ public class InternetRoutingSimulation {
         public boolean addNewConnectionTo(Integer destNetNodeNumber, int cost) {
             if (destNetNodeNumber == null) {
                 destNetNodeNumber = NEXT_NODE_NUMBER.getAndIncrement();
-                firstHops.add(destNetNodeNumber);
             }
             Edge e = edges.get(destNetNodeNumber);
             if (e != null) {
@@ -397,7 +386,6 @@ public class InternetRoutingSimulation {
             message.cost = cost;
             TableEntry newTableEntry = new TableEntry(netNodeNumber, destNetNodeNumber, cost, destNetNodeNumber);
             nodeTable.put(destNetNodeNumber, newTableEntry);
-            firstHops.add(destNetNodeNumber);
             e = new Edge(netNodeNumber, destNetNodeNumber, cost);
 
             CURRENT_CONNECTION_EDGE = new Edge(netNodeNumber, destNetNodeNumber, cost);
@@ -412,7 +400,6 @@ public class InternetRoutingSimulation {
         public void putMessage(Message message) {
             try {
                 //p(getName()+" +++++   enter put message on queue "+message.messageType+"  '"+message.message);
-                //messageQueue.add(message);
                 messageQueue.put(message);
                 //p(getName()+" +++++   return from put message on queue "+message.messageType+"  '"+message.message+"' messageQueue.size(): "+messageQueue.size());
             } catch (InterruptedException e) {
@@ -524,26 +511,70 @@ public class InternetRoutingSimulation {
                                 netNodeNumber,
                                 netNodeNumber,
                                 sourceRoundLeader);                // the leader of the next round
+                        Stack<SourceRoundMessage> stack = roundLeaderPCElement.getNodeLeaderSingleNodeCalculationStack();
+                        stack.add(srm);
                         proto(this, message, " sending message: " + srm.toString());
                         networkSend(netNodeNumber, srm);
                         break;
 
                     // we get here after a previous round leader has completed
                     // we are the new round leader
+                    // we must set ourselves to take over as the new round leader
+                    // then kick off the first node calculation
+                    //
                     // our stack of SOURCE_ROUND_MESSAGES to run have been loaded up
                     // and this is our signal to begin processing the nodes 'single file'
                     case SOURCE_ROUND_LEADER_BEGIN_CALCULATION:
                         proto(this, message, "NODE(" + netNodeNumber + ") BEGIN ");
+                        SourceRoundLeaderBeginCalculationMessage srlbcMessage =
+                                (SourceRoundLeaderBeginCalculationMessage) message;
                         singleSourceNode = message.getCalcSingleSourceNode();
-                        Stack<SourceRoundMessage> srmStack =
-                                nodeLeaderSingleNodeCalculationStackMap.get(singleSourceNode);
+                        PathCalcElement pcElement = pathCalcElementTable.get(singleSourceNode);
+
+                        // setup our state to handle taking on the role of round leader
+                        pcElement.roundLeaderReset();
+                        PathCalcElement.RoundLeaderStateHolder previousRoundLeaderState =
+                                srlbcMessage.getPreviousRoundLeaderState();
+                        previousRoundLeaderState.transferToNew(pcElement);
+                        proto(this, message,
+                                sourceRoundLeaderObject(pcElement, netNodeNumber) +
+                                        "  After transfer of previous round leader state, our child node contents are: "+
+                                        pcElement.getChildNodeContents());
+
+                        //Stack<SourceRoundMessage> srmStack = pcElement.getNodeLeaderSingleNodeCalculationStack();
+                        int nextRoundLeaderProcessedChildCount = 0;
+                        for (Integer i : pcElement.childNodes) {
+                            // queue up all unprocessed nodes
+                            if (!pcElement.allCompletedChildNodes.contains(i)) {
+                                SourceRoundMessage srm1 =
+                                        new SourceRoundMessage(MessageType.SINGLE_NODE_CALCULATION,
+                                                singleSourceNode,     // the single source node
+                                                this.netNodeNumber,
+                                                i,
+                                                this.netNodeNumber);                // the leader of the next round
+                                pcElement.addNodeLeaderSingleNodeCalculationMessage(srm1);
+                                nextRoundLeaderProcessedChildCount++;
+                                proto(this, message, "NODE(" + netNodeNumber +
+                                        ") queued up SINGLE_NODE_CALCULATION for node(" + i +
+                                        ").");
+                            } else {
+                                proto(this, message, "NODE(" + netNodeNumber +
+                                        ") skip SINGLE_NODE_CALCULATION on next node(" + i +
+                                        ") because it has already been completed.");
+                            }
+                        }
+                        if (nextRoundLeaderProcessedChildCount <= 0) {
+                            // there are no more nodes to process
+                            cons("FATAL ERROR !  there are NO next nodes to process but we are in SOURCE_ROUND_LEADER_BEGIN_CALCULATION !");
+                            break;
+                        }
                         SourceRoundMessage nextSourceRoundMessage =
-                                srmStack.pop();
+                                pcElement.nextNodeLeaderSingleNodeCalculationMessage();
                         if (nextSourceRoundMessage != null) {
                             int singleNodeToCalculate = nextSourceRoundMessage.to;
                             networkSend(singleNodeToCalculate, nextSourceRoundMessage);
                         } else {
-                            cons("FATAL error in SOURCE_ROUND_LEADER_BEGIN_CALCULATION: "+
+                            cons("FATAL ERROR in SOURCE_ROUND_LEADER_BEGIN_CALCULATION: "+
                                  "SOURCE_ROUND_MESSAGE stack empty when it should NOT be ! \n"+
                                     "Less optimal routing may result.");
                         }
@@ -611,7 +642,6 @@ public class InternetRoutingSimulation {
                         //proto(this, message, "BEGIN ");
                         NodeEdgeCalculationCompleteMessage NECCompleteMessage =
                                 (NodeEdgeCalculationCompleteMessage) message;
-                        sourceRoundLeader = NECCompleteMessage.roundLeaderNode;
                         PCElement = pathCalcElementTable.get(NECCompleteMessage.calcSingleSourceNode);
                         // add this edge to our seen set so that we don't process it twice
                         PCElement.addSeenEdge(NECCompleteMessage.edgeFrom);
@@ -622,7 +652,6 @@ public class InternetRoutingSimulation {
                             //proto(this, message, "NODE("+netNodeNumber+") PROCESSING IS COMPLETE, run EDGE CALC COMPLETE TASK");
                             sourceRoundLeader = NECCompleteMessage.roundLeaderNode;
                             SingleNodeCalculationsCompleteMessage SNCCompleteMessage =
-                                    //new SingleNodeCalculationsCompleteMessage(sourceRoundLeader,
                                     new SingleNodeCalculationsCompleteMessage(NECCompleteMessage.calcSingleSourceNode,
                                             netNodeNumber,
                                             sourceRoundLeader,
@@ -649,12 +678,12 @@ public class InternetRoutingSimulation {
                         //p(getName()+" +++++   top of case SINGLE_NODE_CALCULATIONS_COMPLETE: "+message.messageType+"  '"+message.toString()+"'");
                         proto(this, message, "NODE(" + netNodeNumber + ") BEGIN ");
                         singleSourceNode = message.getCalcSingleSourceNode();
-                        sourceRoundLeader = message.roundLeaderNode;
+                        sourceRoundLeader = message.roundLeaderNode;    // this better be US !
                         //p(getName()+" +++++   top of case SINGLE_NODE_CALCULATIONS_COMPLETE: after proto() call");
                         SingleNodeCalculationsCompleteMessage SRCompleteMessage = (SingleNodeCalculationsCompleteMessage) message;
 
                         // we need the element that corresponds to the single source calculation that is using us as the SOURCE ROUND LEADER NODE
-                        PathCalcElement SourceRoundLeaderNodePCElement = pathCalcElementTable.get(SRCompleteMessage.getCalcSingleSourceNode());
+                        PathCalcElement SourceRoundLeaderNodePCElement = pathCalcElementTable.get(singleSourceNode);
                         proto(this, message, sourceRoundLeaderObject(SourceRoundLeaderNodePCElement, sourceRoundLeader) + " about to do addCompletedChildNode(" + from + ") on SourceRoundLeaderNodePCElement(" + SourceRoundLeaderNodePCElement.nodeId + "): " + SourceRoundLeaderNodePCElement.getChildNodeContents());
                         SourceRoundLeaderNodePCElement.addCompletedChildNode(from);
                         proto(this, message, sourceRoundLeaderObject(SourceRoundLeaderNodePCElement, sourceRoundLeader) + " after add of completedChildNode(" + from + ") " + SourceRoundLeaderNodePCElement.getChildNodeContents());
@@ -669,22 +698,23 @@ public class InternetRoutingSimulation {
 
                         // We're the source round leader node, so we're tracking all of the calc nodes for this round
                         // if the completedChildCount == the childCount then this round is done
-                        // else we're not done and we leave now
+                        // else we're not done and we send off the next node in the queue
                         if (!SourceRoundLeaderNodePCElement.isRoundComplete()) {
                             //p(getName()+" +++++   isRoundCOmplete() == false   break !");
                             proto(this, message, "NODE(" + netNodeNumber + ")  isRoundComplete() == false  exit, start next Node Calculation edges.");
 
-                            Stack<SourceRoundMessage> srmStack2 =
-                                    nodeLeaderSingleNodeCalculationStackMap.get(singleSourceNode);
                             SourceRoundMessage nextSourceRoundMessage2 =
-                                    srmStack2.pop();
+                                    SourceRoundLeaderNodePCElement.nextNodeLeaderSingleNodeCalculationMessage();
                             if (nextSourceRoundMessage2 != null) {
                                 int singleNodeToCalculate = nextSourceRoundMessage2.to;
                                 networkSend(singleNodeToCalculate, nextSourceRoundMessage2);
+                                proto(this, message, sourceRoundLeaderObject(SourceRoundLeaderNodePCElement, sourceRoundLeader) +
+                                        "+++++  Leader Node: we've just kicked off edge calcs for the next node ["+singleNodeToCalculate+"]");
                                 break;       // kicked off next node calc, we're done here
                             }
                             cons("UNEXPECTED null nextSourceRoundMessage2 in SINGLE_NODE_CALCULATIONS_COMPLETE\n"+
-                                    "  we should have a next node to process queued up to go, but there is NOT one !");
+                                    "  we should have a next node to process queued up to go, but there is NOT one !\n"+
+                                    "  calculation will continue on anyway.");
                             // we should not have reached here, but if we did then we've completed the round
                             // so continue
                         }
@@ -701,62 +731,25 @@ public class InternetRoutingSimulation {
                                 Integer nextSourceRoundLeader = it.next();
                                 //p(getName()+" +++++  nextSourceRoundLeader = "+nextSourceRoundLeader);
                                 if (nextSourceRoundLeader != null) {
-
-                                    PathCalcElement.RoundLeaderStateHolder oldRoundLeaderState =
-                                            SourceRoundLeaderNodePCElement.new RoundLeaderStateHolder(SourceRoundLeaderNodePCElement);
-                                    // get the correct Element for the next Round leader
-                                    NetNode nextRoundLeaderNetNode = nodeMap.get(nextSourceRoundLeader);
-
-                                    ////////////////////////
-                                    // actually, we should be doing this initialization of the next round leader via a network message
-                                    // rather than cheating and doing it directly via Object reference here
-                                    // but that's a low value add for the demo now even though we really should be doing it that way
-                                    ////////////////////////
-
-                                    // prep for handling the next set of child nodes for the new source round leader to handle
-                                    Stack<SourceRoundMessage> nextNodeLeaderSingleNodeCalculationStack =
-                                            nextRoundLeaderNetNode.nodeLeaderSingleNodeCalculationStackMap.get(singleSourceNode);
-                                    if (nextNodeLeaderSingleNodeCalculationStack == null) {
-                                        nextNodeLeaderSingleNodeCalculationStack = new Stack<SourceRoundMessage>();
-                                        nextRoundLeaderNetNode.nodeLeaderSingleNodeCalculationStackMap.put(singleSourceNode, nextNodeLeaderSingleNodeCalculationStack);
-                                    }
-                                    nextNodeLeaderSingleNodeCalculationStack.clear();
-
-                                    PathCalcElement ppp = nextRoundLeaderNetNode.pathCalcElementTable.get(SRCompleteMessage.getCalcSingleSourceNode());
-
-                                    // this will be the PathCalcElement in the next Source Round Leader node that corresponds to THIS Single Source Node calculation
-                                    PathCalcElement nextRoundLeaderPCElement = nodeMap.get(nextSourceRoundLeader).pathCalcElementTable.get(SRCompleteMessage.getCalcSingleSourceNode());
-                                    proto(this, message, "NODE(" + netNodeNumber + ") ++++++++++  SEND BEGIN next Round using next sourceRoundLeader " + sourceRoundLeaderObject(nextRoundLeaderPCElement, nextRoundLeaderPCElement.nodeId) + ")");
-                                    nextRoundLeaderPCElement.roundLeaderReset();
-
-                                    // relay forward the complete edge count to the next round leader
-                                    // as well as the child nodes for the next Round
-                                    oldRoundLeaderState.transferToNew(nextRoundLeaderPCElement);
-                                    proto(this, message, sourceRoundLeaderObject(nextRoundLeaderPCElement, nextRoundLeaderPCElement.nodeId) + " after roundLeaderReset() and transferToNew() " +
-                                            nextRoundLeaderPCElement.getChildNodeContents());
-                                    int nextRoundLeaderProcessedChildCount = 0;
-                                    for (Integer i : nextRoundLeaderPCElement.childNodes) {
-                                        // queue up all unprocessed nodes
-                                        if (!nextRoundLeaderPCElement.allCompletedChildNodes.contains(i)) {
-                                            SourceRoundMessage srm1 =
-                                                    new SourceRoundMessage(MessageType.SINGLE_NODE_CALCULATION,
-                                                            SRCompleteMessage.getCalcSingleSourceNode(),     // the single source node
-                                                            this.netNodeNumber,
-                                                            i,
-                                                            nextSourceRoundLeader);                // the leader of the next round
-                                            nextNodeLeaderSingleNodeCalculationStack.add(srm1);
-                                            nextRoundLeaderProcessedChildCount++;
-                                        } else {
-                                            proto(this, message, "NODE(" + netNodeNumber + ") skip SINGLE_NODE_CALCULATION on next node(" + i + ") because it has already been completed in nextRoundLeaderPCElement(" + nextRoundLeaderPCElement.nodeId + ").");
+                                    int nextChildNodeToDoCount = 0;
+                                    Set<Integer> nextRoundChildNodes = SourceRoundLeaderNodePCElement.nextRoundChildNodes;
+                                    for (Integer i : nextRoundChildNodes) {
+                                        if (!SourceRoundLeaderNodePCElement.allCompletedChildNodes.contains(i)) {
+                                            nextChildNodeToDoCount++;
                                         }
                                     }
-                                    if (nextRoundLeaderProcessedChildCount > 0) {
+                                    // if there are more nodes to process then kick off the next round leader
+                                    // else fall through and declare the computation for this single source node  COMPLETE
+                                    if (nextChildNodeToDoCount > 0) {
+                                        PathCalcElement.RoundLeaderStateHolder oldRoundLeaderState =
+                                                SourceRoundLeaderNodePCElement.new RoundLeaderStateHolder(SourceRoundLeaderNodePCElement);
                                         SourceRoundLeaderBeginCalculationMessage beginCalculationMessage =
                                                 new SourceRoundLeaderBeginCalculationMessage(
                                                         SRCompleteMessage.getCalcSingleSourceNode(),     // the single source node
                                                         this.netNodeNumber,
                                                         nextSourceRoundLeader,
-                                                        nextSourceRoundLeader);
+                                                        nextSourceRoundLeader,
+                                                        oldRoundLeaderState);
                                         networkSend(nextSourceRoundLeader, beginCalculationMessage);
                                         break;
                                     }
@@ -810,55 +803,6 @@ public class InternetRoutingSimulation {
                     default:
                         throw new RuntimeException(getName() + " UKNOWN messageType: " + message.messageType);
                 }
-            }
-        }
-
-        //
-        // Runs on the leader node
-        // from a single node
-        // being the individual single edge distributed calculation of all minimum paths from the single source node
-        //
-        class BeginSourceCalculationTask implements Runnable {
-            final NetNode sourceNode;
-            final NodeEdgeCalculationMessage message;
-            final int sourceRoundLeader;
-
-            public BeginSourceCalculationTask(NetNode n, NodeEdgeCalculationMessage m) {
-                sourceNode = n;
-                message = m;
-                sourceRoundLeader = m.roundLeaderNode;
-            }
-
-            @Override
-            public void run() {
-                PathCalcElement PCElement = pathCalcElementTable.get(sourceNode.netNodeNumber);
-                PCElement.beforeGlobalCalculationReset();
-                PCElement.addChildNode(sourceNode.netNodeNumber);          // we are the only child
-
-                // queue up all edges connected to this node for next round
-                LinkedNode n = g.getAdjList(sourceNode.netNodeNumber);
-                while (n != null) {
-                    Edge e1 = n.edge();
-                    if (!PCElement.seenEdges.contains(e1)) {
-                        int toNode = e1.dest;
-                        PCElement.nextRoundChildNodes.add(toNode);   // track the node id
-                    }
-                    n = n.next();
-                }
-                // we are the originating source node so the cost of reaching our node is 0
-                PCElement.currDistTo = 0;
-                PCElement.edgeTo = null;
-                int newEdgeCount = 0;
-
-                // now send the completion message to the round leader
-                SingleNodeCalculationsCompleteMessage completeMessage =
-                        new SingleNodeCalculationsCompleteMessage(sourceNode.netNodeNumber,    // single source node, us
-                                sourceNode.netNodeNumber,    // this message from, us
-                                sourceNode.netNodeNumber,    // this message to, us
-                                sourceNode.netNodeNumber,    // the leader of ths round, us
-                                PCElement.nextRoundChildNodes,    // next nodes
-                                newEdgeCount);
-                networkSend(sourceNode.netNodeNumber, completeMessage);
             }
         }
 
@@ -920,7 +864,6 @@ public class InternetRoutingSimulation {
                                 e.source                           // the first hop node is the vertex of the edge at the single source node side
                         );
                         node.nodeTable.put(nodeMessage.calcSingleSourceNode, te);
-                        node.firstHops.add(e.source);              // todo: do we still need first hops ?
                         nextChildNode = new Integer(e.dest);
                         newEdgeCount++;      // new edge connecting 2 nodes  increases the calc edge count
                     }
@@ -944,51 +887,6 @@ public class InternetRoutingSimulation {
         }
 
         //
-        //  This runs on the Node that sent out the original NODE_EDGE_CALCULATION message
-        //
-        //  An individual Node Edge Calculation has completed
-        //  we tally up the next child nodes that the Node Edge Calculation has sent back
-        //  add these to our Node's list
-        //  when our Node has run all of it's Edge calculations
-        //  we notify this Round's  Source Round Leader Node
-        //  this accumulated list is added to the Leader Node's list
-        //
-        class NodeEdgeCalculationCompleteTask implements Runnable {
-            final NodeEdgeCalculationCompleteMessage nodeMessage;
-            final NetNode node;                  // the node doing the computing
-            final int sourceRoundLeader;
-
-            public NodeEdgeCalculationCompleteTask(NetNode n, NodeEdgeCalculationCompleteMessage m) {
-                node = n;
-                nodeMessage = m;
-                sourceRoundLeader = m.roundLeaderNode;
-            }
-
-            @Override
-            public void run() {
-                //proto(node, nodeMessage, "("+node.netNodeNumber+") ALL EDGES PROCESSED  running NodeEdgeCalculationCompleteTask");
-                // we are the node that sent out the edge calculation   get our element for this
-                // tally up the next nodes found by the completed edge
-                // tally up any NEW edge counts that might have been found by the edge calculation
-                //  the NEW edge count is required to help determine when the Single Source algorithm is complete
-                //  that is based on the fact that it will require no more than N-1 edges to connect all the vertices
-                //  in the graph  where N is the number of vertices in the graph
-                PathCalcElement PCElement = node.pathCalcElementTable.get(nodeMessage.calcSingleSourceNode);
-                PCElement.edgeNodeNewEdgeCount += nodeMessage.newEdgeCount;
-                int sourceRoundLeader = nodeMessage.roundLeaderNode;
-                SingleNodeCalculationsCompleteMessage SNCCompleteMessage =
-                        new SingleNodeCalculationsCompleteMessage(sourceRoundLeader,
-                                netNodeNumber,
-                                sourceRoundLeader,
-                                sourceRoundLeader,
-                                PCElement.nextRoundChildNodes,
-                                PCElement.edgeNodeNewEdgeCount);
-                proto(node, nodeMessage, "NODE(" + node.netNodeNumber + ") is COMPLETE send " + SNCCompleteMessage.messageType + " message to " + sourceRoundLeaderString(sourceRoundLeader));
-                networkSend(sourceRoundLeader, SNCCompleteMessage);
-            }
-        }
-
-        //
         //  Each node holds one of these for every other source node in the network
         //  It holds the calculation state for the minimum paths originating from that source node
         //
@@ -999,6 +897,7 @@ public class InternetRoutingSimulation {
             int globalNewEdgeCount;     // this is the propagated complete new edge count
             // this is very important and determines when the calculation can stop
             // we depend on relaying the accumulated count to next sourceRoundLeaders
+            Stack<SourceRoundMessage> nodeLeaderSingleNodeCalculationStack;
             boolean singleSourceComputationComplete;
             boolean roundComplete = false;      // a local node round is complete
             Set<Integer> childNodes;
@@ -1023,6 +922,19 @@ public class InternetRoutingSimulation {
                 regularNodePerRoundReset();
             }
 
+            Stack<SourceRoundMessage> getNodeLeaderSingleNodeCalculationStack() {
+                if (nodeLeaderSingleNodeCalculationStack == null) {
+                    nodeLeaderSingleNodeCalculationStack = new Stack<SourceRoundMessage>();
+                }
+                return nodeLeaderSingleNodeCalculationStack;
+            }
+            void addNodeLeaderSingleNodeCalculationMessage(SourceRoundMessage m) {
+                getNodeLeaderSingleNodeCalculationStack().push(m);
+            }
+            SourceRoundMessage nextNodeLeaderSingleNodeCalculationMessage() {
+                return getNodeLeaderSingleNodeCalculationStack().pop();
+            }
+
             // this is the blank slate reset that must be done
             // before the start of any single source calculation
             public boolean beforeGlobalCalculationReset() {
@@ -1042,7 +954,10 @@ public class InternetRoutingSimulation {
             public boolean roundLeaderReset() {
                 regularNodePerRoundReset();
                 roundComplete = false;
-                //seenEdges.clear();     // no keep these so that we don't process the same edge more than once
+                if (nodeLeaderSingleNodeCalculationStack == null) {
+                    nodeLeaderSingleNodeCalculationStack = new Stack<SourceRoundMessage>();
+                }
+                nodeLeaderSingleNodeCalculationStack.clear();
                 if (childNodes == null) {
                     childNodes = new HashSet();
                 }
@@ -1077,21 +992,7 @@ public class InternetRoutingSimulation {
             }
 
             public boolean isRoundComplete() {
-                if (childNodes == null) {
-                    childNodes = new HashSet<>();
-                }
-                if (completedChildNodes == null) {
-                    completedChildNodes = new HashSet<>();
-                }
-                for (Integer i : childNodes) {
-                    if (i == null) {
-                        continue;
-                    }
-                    if (!completedChildNodes.contains(i)) {
-                        return false;
-                    }
-                }
-                return true;
+                return nodeLeaderSingleNodeCalculationStack.size() <= 0;
             }
 
             public void addEdgeNode(int i) {
@@ -1105,7 +1006,6 @@ public class InternetRoutingSimulation {
                 }
                 return nodeComplete;
             }
-
 
             public void addChildNode(int i) {
                 if (childNodes == null) {
@@ -1379,8 +1279,15 @@ public class InternetRoutingSimulation {
         }
 
         public class SourceRoundLeaderBeginCalculationMessage extends SourceRoundMessage {
-            public SourceRoundLeaderBeginCalculationMessage(int s, int f, int t, int rleader) {
+            final PathCalcElement.RoundLeaderStateHolder previousRoundLeaderState;
+            public SourceRoundLeaderBeginCalculationMessage(int s, int f, int t, int rleader,
+                                                            PathCalcElement.RoundLeaderStateHolder rlsh
+            ) {
                 super(MessageType.SOURCE_ROUND_LEADER_BEGIN_CALCULATION, s, f, t, rleader);
+                this.previousRoundLeaderState = rlsh;
+            }
+            PathCalcElement.RoundLeaderStateHolder getPreviousRoundLeaderState() {
+                return previousRoundLeaderState;
             }
         }
 
