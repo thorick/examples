@@ -6,15 +6,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This Demo simulates a network in which new members or connections can be added at any time
+ *
+ * This code may be freely copied and distributed as long as you keep this attribution in intact:
+ *
+ * Author:  thorick.chow@gmail.com
+ *          www.thorick-code.blogspot.com
+ *          2020 April
+ *
+ *
+ * This Demo simulates a network in which new connections can be added at any time as is true in the
+ * actual internet.
  * <p>
- * The primary point of the demo is to show that as new nodes are added, the most cost-efficient
- * way to route a message between nodes is updated.
+ * The primary point of the demo is to show the decentralized nature of the internet in which
+ * the calculation of efficient routing information is distributed out to the nodes on the network.
+ *
+ * To run:
+ *        java   -jar    internet-routing-simulation-1.0.jar
+ *
  * The harder problem of dealing with nodes that drop out is ignored and out of scope of this simple demo
  * whose primary purpose is to show the use of a distributed Bellman-Ford graph single source shortest paths algorithm.
  * <p>
- * Simulating the decentralized nature of the internet the routing information and calculation is
- * distributed to the nodes.
+ * Simulating
  * <p>
  * Minimum cost routing from node to node is computed using distributed Bellman-Ford for each network node.
  * This is a high cost way of computing All Pairs Shortest Paths but the benefit is that it is decentralized.
@@ -33,10 +45,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * In our case we can dispense with the overhead and complexity of a consensus algorithm by taking advantage
  * of the parallel but sequential nature of the algorithm.
  * <p>
- * We process nodes in synchronous batches in which the next batch of nodes to be processed are those that are
- * reachable from the nodes of the current batch.
+ * We process nodes in synchronous rounds in which the next batch of nodes to be processed are those that are
+ * reachable from the nodes of the current round.  The synchronous rounds correspond to sequential subsequences of
+ * steps in a Dynamic Programming algorithm.
+ *
  * The actual algorithm involves the edges between the nodes but we use the nodes as the primary objects
- * that the implementation controls.
+ * that the implementation controls without any loss of correctness.
  * <p>
  * A synchronous batch is complete after the last unprocessed node has been used in a calculation.
  * For each batch there is a 'Leader Node'.
@@ -139,7 +153,6 @@ public class InternetRoutingSimulation {
             } catch (InterruptedException e) {
             }
         }
-        p("go to sleep " + GLOBAL_ROUTE_POST_COMPUTE_SLEEPTIME + " to allow network changes to propagate\n");
         try {
             Thread.sleep(GLOBAL_ROUTE_POST_COMPUTE_SLEEPTIME);    // give the new connection time to settle into the network
         } catch (InterruptedException e) {
@@ -774,8 +787,7 @@ public class InternetRoutingSimulation {
                             proto(this, message,
                                     sourceRoundLeaderString(netNodeNumber) + " DID " + (metGlobalNewEdgeCountThreshold ? "" : "NOT ") +
                                             "meet ROUND COMPLETE edge threshold. " +
-                                            "DECLARING SINGLE SOURCE NODE COMPUTATION COMPLETE for source (" + netNodeNumber + ")" +
-                                            " UNLOCKING GLOBAL_ROUTE_MAP_LOCK");
+                                            "DECLARING SINGLE SOURCE NODE COMPUTATION COMPLETE for source (" + netNodeNumber + ")\n");
                             GLOBAL_ROUTE_MAP_LOCKED.set(false);    // we've done all NODES  unlock !
 
                             if (PRINT_FINAL_ROUTING_TABLE) {
@@ -1737,5 +1749,6 @@ public class InternetRoutingSimulation {
 
     public static void main(String[] args) {
         runDemo0();
+        System.exit(0);
     }
 }
