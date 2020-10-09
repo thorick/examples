@@ -278,7 +278,7 @@ public class MinimumSQLJoinCalculation {
                 "which of the three possible Subsets of Joins that are selected may depend on the\n"+
                 "particular JVM that you are using to run this demo.\n"+
                 "To see the 3 possible Subsets of Joins see the Demo Graph Diagram in the link: \n" +
-                "      http://thorick-code.blogspot.com/MinimalXXX.html\n\n"+
+                "      https://thorick-code.blogspot.com/2020/07/the-sql-join-minimal-subset-problem.html\n\n"+
                 "each Subset of Minimum Joins is shown chained together in a different color.\n\n");
         sb.append("Computed Minimum SQL Join Set to reach Target Tables:\n");
         sb.append(resultString+"\n\n\n\n");
@@ -300,7 +300,7 @@ public class MinimumSQLJoinCalculation {
         sb.append("< RESULT >\n\n");
         sb.append("In this case there is only 1 Subset of 5 Joins that meet our Minimum Criteria\n\n"+
         "There is a graph showing these Joins in another Demo Graph Diagram in the link: \n" +
-                "      http://thorick-code.blogspot.com/MinimalXXX.html\n\n");
+                "      https://thorick-code.blogspot.com/2020/07/the-sql-join-minimal-subset-problem.html\n\n");
         sb.append("Computed Minimum SQL Join Set to reach Target Tables:\n");
         sb.append(resultString+"\n\n");
         demo_log(sb.toString());
